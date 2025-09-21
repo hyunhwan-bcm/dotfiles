@@ -1,0 +1,61 @@
+# ~/.config/alacritty/alacritty.toml
+
+[window]
+padding = { x = 8, y = 8 }
+dynamic_padding = true
+decorations = "Full"
+startup_mode = "Windowed"
+opacity = 0.95
+option_as_alt = "Both"  # map Option to Alt/Meta
+
+[scrolling]
+history = 10000
+multiplier = 3
+
+[font]
+size = 13.0
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Regular"
+
+[font.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Bold"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font"
+style = "Italic"
+
+[cursor]
+style = { shape = "Block", blinking = "On" }
+vi_mode_style = "Beam"
+blink_interval = 500
+unfocused_hollow = true
+
+[colors.primary]
+background = "0x1E1E2E"
+foreground = "0xCDD6F4"
+
+[colors.normal]
+black   = "0x1E1E2E"
+red     = "0xF38BA8"
+green   = "0xA6E3A1"
+yellow  = "0xF9E2AF"
+blue    = "0x89B4FA"
+magenta = "0xF5C2E7"
+cyan    = "0x94E2D5"
+white   = "0xBAC2DE"
+
+[colors.bright]
+black   = "0x585B70"
+red     = "0xF38BA8"
+green   = "0xA6E3A1"
+yellow  = "0xF9E2AF"
+blue    = "0x89B4FA"
+magenta = "0xF5C2E7"
+cyan    = "0x94E2D5"
+white   = "0xA6ADC8"
+
+[general]
+live_config_reload = true
