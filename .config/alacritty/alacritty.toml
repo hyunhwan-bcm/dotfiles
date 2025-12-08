@@ -1,0 +1,38 @@
+[window]
+padding = { x = 8, y = 8 }
+dynamic_padding = true
+decorations = "Full"
+startup_mode = "Windowed"
+opacity = 0.95
+option_as_alt = "Both"  # map Option to Alt/Meta
+
+[scrolling]
+history = 10000
+multiplier = 3
+
+[font]
+size = 13.0
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Regular"
+
+[font.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Bold"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font"
+style = "Italic"
+
+[cursor]
+style = { shape = "Block", blinking = "On" }
+vi_mode_style = "Beam"
+blink_interval = 500
+unfocused_hollow = true
+
+[general]
+live_config_reload = true
+import = [
+    "~/.config/alacritty/themes/themes/ayu_dark.toml"
+]
