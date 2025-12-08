@@ -1,0 +1,21 @@
+[init]
+	defaltBranch = main
+	defaultBranch = main
+[user]
+	name = Hyun-Hwan Jeong
+	email = hyun-hwan.jeong@bcm.edu
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[push]
+	autoSetupRemote = true
+[alias]
+	adog = log --all --decorate --oneline --graph
