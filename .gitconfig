@@ -17,3 +17,5 @@
 	helper = !/opt/homebrew/bin/gh auth git-credential
 [push]
 	autoSetupRemote = true
+[alias]
+	adog = log --all --decorate --oneline --graph
