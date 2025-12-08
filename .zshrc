@@ -81,3 +81,17 @@ source <(fzf --zsh)
 source ~/.zsh_extra
 source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
+export CRUN_MODEL="gpt-5-mini"
+
+crun() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: crun <prompt>"
+    return 1
+  fi
+
+  # Join all arguments into a prompt string
+  local prompt="$*"
+
+  copilot -p "$prompt" --model "$CRUN_MODEL" --allow-all-tools
+}
+
