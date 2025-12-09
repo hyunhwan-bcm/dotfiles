@@ -79,7 +79,6 @@ alias vim=nvim
 
 source <(fzf --zsh)
 source ~/.zsh_extra
-source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
 export CRUN_MODEL="gpt-5-mini"
 
@@ -93,5 +92,50 @@ crun() {
   local prompt="$*"
 
   copilot -p "$prompt" --model "$CRUN_MODEL" --allow-all-tools
+}
+
+
+
+oduck() {
+    local n=10
+    local file=""
+
+    # --- Parse args for TTY (no stdin) case ---
+    if [ -t 0 ]; then
+        # Cases:
+        #   oduck -100 file
+        #   oduck file -100
+        #   oduck file
+        if [[ "$1" =~ ^-[0-9]+$ ]]; then
+            n=${1:1}
+            file="$2"
+        elif [[ "$2" =~ ^-[0-9]+$ ]]; then
+            n=${2:1}
+            file="$1"
+        else
+            file="$1"
+        fi
+
+        if [ -z "$file" ]; then
+            echo "Usage: oduck [-N] <file>"
+            return 1
+        fi
+
+        duckdb -c "SELECT * FROM '$file' LIMIT $n;"
+        return
+    fi
+
+    # --- Stdin case: oduck [-N], no filename ---
+    # Example: cat file.parquet | oduck -50
+    if [[ "$1" =~ ^-[0-9]+$ ]]; then
+        n=${1:1}
+    fi
+
+    local tmpfile
+    tmpfile=$(mktemp /tmp/oduck.XXXXXX)
+
+    cat > "$tmpfile"
+    duckdb -c "SELECT * FROM '$tmpfile' LIMIT $n;"
+    rm "$tmpfile"
 }
 
