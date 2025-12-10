@@ -76,7 +76,7 @@ export LANG=en_US.UTF-8
 export EDITOR='nvim'
 alias vi=nvim
 alias vim=nvim
-
+alias ls=eza
 source <(fzf --zsh)
 source ~/.zsh_extra
 
@@ -138,4 +138,5 @@ oduck() {
     duckdb -c "SELECT * FROM '$tmpfile' LIMIT $n;"
     rm "$tmpfile"
 }
+
 
