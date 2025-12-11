@@ -18,4 +18,3 @@ Notes
 - If your local branch has diverged from the remote, the function will not auto-pull; it shows guidance to handle the divergence manually.
 - If you have uncommitted changes in the repo, the function will refuse to auto-pull and advise you to stash or commit changes first.
 
-Contributed by: dotfiles helper
