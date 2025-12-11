@@ -242,3 +242,6 @@ alias df-update='dotfiles_update'
 
 df-update
 
+
+. "$HOME/.local/bin/env"
+source $HOME/.local/bin/env
