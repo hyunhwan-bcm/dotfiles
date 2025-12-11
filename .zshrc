@@ -139,4 +139,106 @@ oduck() {
     rm "$tmpfile"
 }
 
+# -------------------------------
+# dotfiles update helper
+# Checks for remote updates in $HOME/dotfiles and optionally pulls them
+# -------------------------------
+dotfiles_update() {
+    local repo="$HOME/dotfiles"
+
+    if [ ! -d "$repo/.git" ]; then
+        echo "Not a git repository: $repo"
+        return 1
+    fi
+
+    # fetch remote updates
+    if ! git -C "$repo" fetch --prune --quiet; then
+        echo "Failed to fetch updates from remote for $repo"
+        return 1
+    fi
+
+    # current branch
+    local branch
+    branch=$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null) || branch=""
+    if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+        echo "Cannot determine current branch (detached HEAD?) in $repo"
+        return 1
+    fi
+
+    # find upstream/tracking branch (fallback to origin/<branch>)
+    local upstream
+    upstream=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>/dev/null) || upstream=""
+    if [ -z "$upstream" ]; then
+        if git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+            upstream="origin/$branch"
+        else
+            echo "No upstream/tracking branch found for $branch in $repo - cannot compare to remote."
+            return 1
+        fi
+    fi
+
+    # count commits local vs remote (left: local unique, right: remote unique)
+    local counts
+    counts=$(git -C "$repo" rev-list --left-right --count "$branch...$upstream" 2>/dev/null)
+    if [ -z "$counts" ]; then
+        echo "Unable to compute commit counts between local ($branch) and $upstream for $repo"
+        return 1
+    fi
+    set -- $counts
+    local ahead=$1
+    local behind=$2
+
+    if [ "$behind" -eq 0 ]; then
+        echo "Your $repo is up-to-date with $upstream (no new commits)."
+        return 0
+    fi
+
+    echo "Found $behind new commit(s) on $upstream (remote). You're ahead by $ahead commit(s)."
+
+    if [ "$ahead" -gt 0 ] && [ "$behind" -gt 0 ]; then
+        echo "Local and remote have diverged. Please merge or rebase manually:"
+        echo "  cd $repo && git fetch && git log --oneline --graph --decorate --all"
+        return 1
+    fi
+
+    echo "New commits on $upstream (from oldest to newest):"
+    git -C "$repo" log --oneline --decorate --reverse "$branch..$upstream"
+
+    local ans
+    read -r -p "Pull updates into $repo? [y/N] " ans
+    case "$ans" in
+        y|Y)
+            # ensure there are no uncommitted or untracked changes
+            if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
+                echo "You have uncommitted or untracked changes in $repo. Please commit/stash them before pulling."
+                echo "  cd $repo && git status --porcelain"
+                return 1
+            fi
+
+            # attempt a fast-forward pull first
+            if git -C "$repo" pull --ff-only; then
+                echo "Pull complete."
+                return 0
+            else
+                echo "Fast-forward pull failed; attempting regular pull (may create merge commits)..."
+                if git -C "$repo" pull; then
+                    echo "Pull complete."
+                    return 0
+                else
+                    echo "Pull failed; please update $repo manually."
+                    return 1
+                fi
+            fi
+            ;;
+        *)
+            echo "Not pulling."
+            return 0
+            ;;
+    esac
+}
+
+# convenience aliases
+alias df-update='dotfiles_update'
+
+df-update
 
