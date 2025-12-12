@@ -23,15 +23,23 @@ return {
     },
   },
   {
-    "nvim-neotest/neotest",
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
     dependencies = {
-      "nvim-neotest/nvim-nio",
       "nvim-lua/plenary.nvim",
-      "antoinemadec/FixCursorHold.nvim",
-      "nvim-treesitter/nvim-treesitter"
+      "MunifTanjim/nui.nvim",
+      "nvim-tree/nvim-web-devicons", -- optional, for icons
     },
+    lazy = false, -- neo-tree will lazily load itself
     config = function()
-      require("config.neotest")
+      require("neo-tree").setup({
+        filesystem = {
+          follow_current_file = {
+            enabled = true,
+          },
+          hijack_netrw_behavior = "open_default",
+        },
+      })
     end,
-  },
+  }
 }
