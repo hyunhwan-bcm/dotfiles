@@ -35,3 +35,9 @@ require "autocmds"
 vim.schedule(function()
   require "mappings"
 end)
+
+if vim.g.vscode then
+  vim.opt.laststatus = 0
+  vim.opt.winbar = ""
+end
+
