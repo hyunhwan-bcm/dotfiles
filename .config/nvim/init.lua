@@ -41,3 +41,9 @@ if vim.g.vscode then
   vim.opt.winbar = ""
 end
 
+local opts = { noremap = true, silent = true }
+vim.keymap.set({ "n", "i", "v" }, "<Up>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Down>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Left>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Right>", "<Nop>", opts)
+

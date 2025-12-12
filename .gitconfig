@@ -19,3 +19,5 @@
 	autoSetupRemote = true
 [alias]
 	adog = log --all --decorate --oneline --graph
+[core]
+	excludesfile = /Users/hyun-hwanjeong/.gitignore_global

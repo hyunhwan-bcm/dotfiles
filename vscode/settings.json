@@ -11,7 +11,6 @@
     "python.createEnvironment.trigger": "off",
     "lldb.suppressUpdateNotifications": true,
     "github.copilot.nextEditSuggestions.enabled": true,
-    "python.defaultInterpreterPath": "/Users/2katz/micromamba/envs/mlx",
     "git.openRepositoryInParentFolders": "never",
     "git.enableSmartCommit": true,
     "extensions.experimental.affinity": {
