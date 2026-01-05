@@ -1,10 +1,15 @@
 require "nvchad.mappings"
 
 -- add yours here
-
 local map = vim.keymap.set
+local opts = { noremap = true, silent = true }
 
-map("n", ";", ":", { desc = "CMD enter command mode" })
-map("i", "jk", "<ESC>")
+-- Disable arrow keys (Hard Mode)
+vim.keymap.set({ "n", "i", "v" }, "<Up>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Down>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Left>", "<Nop>", opts)
+vim.keymap.set({ "n", "i", "v" }, "<Right>", "<Nop>", opts)
 
--- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
+-- Window navigation is handled by vim-tmux-navigator plugin
+
+vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { silent = true })
