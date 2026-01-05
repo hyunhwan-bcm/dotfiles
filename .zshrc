@@ -189,7 +189,6 @@ dotfiles_update() {
     local behind=$2
 
     if [ "$behind" -eq 0 ]; then
-        echo "Your $repo is up-to-date with $upstream (no new commits)."
         return 0
     fi
 
