@@ -77,7 +77,14 @@ export EDITOR='nvim'
 alias vi=nvim
 alias vim=nvim
 alias ls=eza
-source <(fzf --zsh)
+# fzf integration (--zsh requires fzf 0.48+; fall back for older versions)
+if command -v fzf &>/dev/null; then
+    if fzf --zsh &>/dev/null 2>&1; then
+        source <(fzf --zsh)
+    elif [ -f ~/.fzf.zsh ]; then
+        source ~/.fzf.zsh
+    fi
+fi
 source ~/.zsh_extra
 
 export CRUN_MODEL="gpt-5-mini"
@@ -159,3 +166,23 @@ export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
 export PATH="/opt/homebrew/opt/arm-none-eabi-gcc@8/bin:$PATH"
+# Docker CLI completions
+[ -d "$HOME/.docker/completions" ] && fpath=($HOME/.docker/completions $fpath)
+
+# opencode
+export PATH=$HOME/.opencode/bin:$PATH
+
+fpath+=~/.zfunc
+
+# Remove broken completion symlinks (e.g., from uninstalled Homebrew casks)
+for _dir in /opt/homebrew/share/zsh/site-functions /usr/local/share/zsh/site-functions; do
+    if [ -d "$_dir" ]; then
+        for _f in "$_dir"/_*(N); do
+            [ -L "$_f" ] && [ ! -e "$_f" ] && rm -f "$_f" 2>/dev/null
+        done
+    fi
+done
+unset _dir _f
+
+autoload -Uz compinit
+compinit
