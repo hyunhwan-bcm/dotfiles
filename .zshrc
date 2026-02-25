@@ -23,8 +23,8 @@ ZSH_THEME="robbyrussell"
 
 # Uncomment one of the following lines to change the auto-update behavior
 # zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
 zstyle ':omz:update' frequency 13
@@ -87,22 +87,6 @@ if command -v fzf &>/dev/null; then
 fi
 source ~/.zsh_extra
 
-export CRUN_MODEL="gpt-5-mini"
-
-crun() {
-  if [ $# -eq 0 ]; then
-    echo "Usage: crun <prompt>"
-    return 1
-  fi
-
-  # Join all arguments into a prompt string
-  local prompt="$*"
-
-  copilot -p "$prompt" --model "$CRUN_MODEL" --allow-all-tools
-}
-
-
-
 oduck() {
     local n=10
     local file=""
@@ -156,16 +140,15 @@ dotfiles_update() {
     (cd ~/dotfiles && git fetch -q && [ "$(git rev-list --count HEAD..@{u} 2>/dev/null)" -gt 0 ] && echo "Updating dotfiles..." && git pull -q --rebase --autostash)
 }
 
-dotfiles_update_async() {
-    setopt localoptions nobgnice nomonitor
-    dotfiles_update >/dev/null 2>&1 &
-    disown
-}
-
 # convenience aliases
 alias df-update='rm -f ~/.dotfiles_update; dotfiles_update'
-dotfiles_update_async
+dotfiles_update
 
+# Added by Antigravity
+export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
+
+# Added by Antigravity
+export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
 export PATH="/opt/homebrew/opt/arm-none-eabi-gcc@8/bin:$PATH"
 # Docker CLI completions
 [ -d "$HOME/.docker/completions" ] && fpath=($HOME/.docker/completions $fpath)
@@ -188,5 +171,7 @@ unset _dir _f
 autoload -Uz compinit
 compinit
 
-# Disable "You have new mail" notifications
-unset MAILCHECK
+# OpenClaw Completion
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+
+. "$HOME/.local/bin/env"
