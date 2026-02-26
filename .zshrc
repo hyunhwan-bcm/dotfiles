@@ -140,12 +140,15 @@ dotfiles_update() {
     (cd ~/dotfiles && git fetch -q && [ "$(git rev-list --count HEAD..@{u} 2>/dev/null)" -gt 0 ] && echo "Updating dotfiles..." && git pull -q --rebase --autostash)
 }
 
+dotfiles_update_async() {
+    setopt localoptions nobgnice nomonitor
+    dotfiles_update >/dev/null 2>&1 &
+    disown
+}
+
 # convenience aliases
 alias df-update='rm -f ~/.dotfiles_update; dotfiles_update'
-dotfiles_update
-
-# Added by Antigravity
-export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
+dotfiles_update_async
 
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
@@ -171,7 +174,8 @@ unset _dir _f
 autoload -Uz compinit
 compinit
 
-# OpenClaw Completion
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+# Disable "You have new mail" notifications
+unset MAILCHECK
 
-. "$HOME/.local/bin/env"
+alias kssh="kitten ssh"
