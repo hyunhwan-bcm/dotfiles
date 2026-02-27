@@ -208,5 +208,7 @@ unset MAILCHECK
 # kitten ssh shortcut
 alias kssh="kitten ssh"
 
-# OpenClaw Completion
-source "/Users/hyunhwan/.openclaw/completions/openclaw.zsh"
+# OpenClaw Completion (only if installed)
+if [ -f "/Users/hyunhwan/.openclaw/completions/openclaw.zsh" ]; then
+    source "/Users/hyunhwan/.openclaw/completions/openclaw.zsh"
+fi
