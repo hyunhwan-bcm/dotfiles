@@ -133,11 +133,38 @@ oduck() {
 # -------------------------------
 # dotfiles update helper
 # Checks for remote updates in $HOME/dotfiles and optionally pulls them
+# Prevents automatic pull if there are uncommitted changes or conflicts
 # -------------------------------
 dotfiles_update() {
+    # Skip if already updated today
     [ -f ~/.dotfiles_update ] && [ -n "$(find ~/.dotfiles_update -mtime -1 2>/dev/null)" ] && return
+    
     touch ~/.dotfiles_update
-    (cd ~/dotfiles && git fetch -q && [ "$(git rev-list --count HEAD..@{u} 2>/dev/null)" -gt 0 ] && echo "Updating dotfiles..." && git pull -q --rebase --autostash)
+    
+    cd ~/dotfiles
+    
+    # Check for uncommitted changes or conflicts first
+    local status=$(git status --short 2>&1)
+    
+    if [ -n "$status" ]; then
+        echo "⚠️  WARNING: dotfiles update skipped due to uncommitted changes/conflicts:"
+        echo ""
+        echo "$status"
+        echo ""
+        echo "Please resolve these manually before running 'df-update' again."
+        return 1
+    fi
+    
+    # Check if there are remote updates
+    git fetch -q
+    local update_count=$(git rev-list --count HEAD..@{u} 2>/dev/null)
+    
+    if [ "$update_count" -gt 0 ]; then
+        echo "Updating dotfiles..."
+        git pull -q --rebase --autostash
+    else
+        echo "✓ No updates available."
+    fi
 }
 
 dotfiles_update_async() {
@@ -178,4 +205,8 @@ compinit
 # Disable "You have new mail" notifications
 unset MAILCHECK
 
+# kitten ssh shortcut
 alias kssh="kitten ssh"
+
+# OpenClaw Completion
+source "/Users/hyunhwan/.openclaw/completions/openclaw.zsh"
