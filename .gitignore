@@ -1,1 +1,8 @@
 .tmux/plugins/
+.DS_Store
+**/.DS_Store
+
+.qwen/
+gha-creds-*.json
+.claude/
+.github/
