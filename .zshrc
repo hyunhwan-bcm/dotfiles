@@ -179,7 +179,6 @@ dotfiles_update_async
 
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
-export PATH="/opt/homebrew/opt/arm-none-eabi-gcc@8/bin:$PATH"
 # Docker CLI completions
 [ -d "$HOME/.docker/completions" ] && fpath=($HOME/.docker/completions $fpath)
 
@@ -187,16 +186,6 @@ export PATH="/opt/homebrew/opt/arm-none-eabi-gcc@8/bin:$PATH"
 export PATH=$HOME/.opencode/bin:$PATH
 
 fpath+=~/.zfunc
-
-# Remove broken completion symlinks (e.g., from uninstalled Homebrew casks)
-for _dir in /opt/homebrew/share/zsh/site-functions /usr/local/share/zsh/site-functions; do
-    if [ -d "$_dir" ]; then
-        for _f in "$_dir"/_*(N); do
-            [ -L "$_f" ] && [ ! -e "$_f" ] && rm -f "$_f" 2>/dev/null
-        done
-    fi
-done
-unset _dir _f
 
 autoload -Uz compinit
 compinit
