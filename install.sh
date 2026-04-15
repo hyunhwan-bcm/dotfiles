@@ -92,7 +92,16 @@ backup_conflicts() {
     for f in "${dominated_files[@]}"; do
         target="$HOME/$f"
         # Only a conflict if it exists AND is NOT already a symlink into our repo
-        if [ -e "$target" ] && ! [ -L "$target" ]; then
+        if [ -e "$target" ] || [ -L "$target" ]; then
+            if [ -L "$target" ]; then
+                # It's a symlink — only skip if it already points into our repo
+                local link_dest
+                link_dest="$(readlink -f "$target" 2>/dev/null || true)"
+                case "$link_dest" in
+                    "$DOTFILES_DIR"/*) continue ;;  # already managed by us
+                esac
+            fi
+            # Real file, directory, or symlink pointing elsewhere → conflict
             dominated=1
             break
         fi
@@ -108,7 +117,12 @@ backup_conflicts() {
         warn "The following existing files/directories would conflict:"
         for f in "${dominated_files[@]}"; do
             target="$HOME/$f"
-            if [ -e "$target" ] && ! [ -L "$target" ]; then
+            if [ -e "$target" ] || [ -L "$target" ]; then
+                if [ -L "$target" ]; then
+                    local link_dest
+                    link_dest="$(readlink -f "$target" 2>/dev/null || true)"
+                    case "$link_dest" in "$DOTFILES_DIR"/*) continue ;; esac
+                fi
                 echo "  • $target"
             fi
         done
@@ -129,10 +143,15 @@ backup_conflicts() {
 
     for f in "${dominated_files[@]}"; do
         target="$HOME/$f"
-        if [ -e "$target" ] && ! [ -L "$target" ]; then
+        if [ -e "$target" ] || [ -L "$target" ]; then
+            if [ -L "$target" ]; then
+                local link_dest
+                link_dest="$(readlink -f "$target" 2>/dev/null || true)"
+                case "$link_dest" in "$DOTFILES_DIR"/*) continue ;; esac
+            fi
             info "Backing up $target → $BACKUP_DIR/$f"
             # If a previous backup exists, remove it first to avoid errors
-            if [ -e "$BACKUP_DIR/$f" ]; then
+            if [ -n "$f" ] && [ -e "$BACKUP_DIR/$f" ]; then
                 rm -rf "$BACKUP_DIR/$f"
             fi
             mv "$target" "$BACKUP_DIR/$f"
@@ -147,7 +166,11 @@ backup_conflicts() {
 stow_dotfiles() {
     info "Linking dotfiles with stow …"
     # --restow re-creates symlinks (idempotent)
-    stow --restow --target="$HOME" --dir="$DOTFILES_DIR" .
+    if ! stow --restow --target="$HOME" --dir="$DOTFILES_DIR" .; then
+        error "stow failed. Check for conflicting files or permission issues."
+        error "You may need to manually resolve conflicts and re-run this script."
+        exit 1
+    fi
     ok "Dotfiles linked into $HOME."
 }
 
