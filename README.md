@@ -81,8 +81,11 @@ docker run --rm -v "$PWD:/workspace:ro" dotfiles-startup-test
 
 The image installs GNU Stow, then the container mounts this repository read-only,
 runs `startup.sh --dry-run`, runs `startup.sh`, and verifies that the expected
-dotfiles are linked while repository-only files such as `README.md`,
-`startup.sh`, and `tests` are not linked into `$HOME`.
+dotfiles are linked. It also checks that Neovim is reachable through
+`~/.config/nvim`, verifies key files such as `init.lua`, `lua/chadrc.lua`, and
+`lazy-lock.json`, and confirms repository-only files such as `README.md`,
+`startup.sh`, `install.sh`, `.stow-local-ignore`, and `tests` are not linked
+into `$HOME`.
 
 Docker containers are Linux containers, so this does not provide a native macOS
 runtime. For macOS, run `./startup.sh --dry-run` locally after installing GNU
