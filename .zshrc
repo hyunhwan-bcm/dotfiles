@@ -72,6 +72,7 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 export LANG=en_US.UTF-8
+[ -f "$HOME/.config/cache-paths.sh" ] && . "$HOME/.config/cache-paths.sh"
 
 export EDITOR='nvim'
 alias vi=nvim
@@ -180,7 +181,7 @@ dotfiles_update_async
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
 # Docker CLI completions
-[ -d "$HOME/.docker/completions" ] && fpath=($HOME/.docker/completions $fpath)
+[ -d "${DOCKER_CONFIG:-$HOME/.docker}/completions" ] && fpath=(${DOCKER_CONFIG:-$HOME/.docker}/completions $fpath)
 
 # opencode
 export PATH=$HOME/.opencode/bin:$PATH
@@ -200,4 +201,15 @@ alias kssh="kitten ssh"
 # OpenClaw Completion (only if installed)
 if [ -f "/Users/hyunhwan/.openclaw/completions/openclaw.zsh" ]; then
     source "/Users/hyunhwan/.openclaw/completions/openclaw.zsh"
+fi
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/hyun-hwanjeong/.cache/lm-studio/bin"
+# End of LM Studio CLI section
+
+# Offloaded caches to external drive (HWAN-T7)
+if [ -d "/Volumes/HWAN-T7" ]; then
+  export RUSTUP_HOME=/Volumes/HWAN-T7/cache/rustup
+  export CARGO_HOME=/Volumes/HWAN-T7/cache/cargo
+  export UV_CACHE_DIR=/Volumes/HWAN-T7/cache/uv
 fi
