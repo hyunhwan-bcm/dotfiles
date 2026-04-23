@@ -44,6 +44,7 @@ if [ "$dry_run" -eq 1 ]; then
     --restow \
     --ignore='README.md' \
     --ignore='startup.sh' \
+    --ignore='tests' \
     --ignore='.DS_Store' \
     --ignore='.claude' \
     .
@@ -56,6 +57,7 @@ else
     --restow \
     --ignore='README.md' \
     --ignore='startup.sh' \
+    --ignore='tests' \
     --ignore='.DS_Store' \
     --ignore='.claude' \
     .
