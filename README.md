@@ -83,7 +83,8 @@ The image installs GNU Stow, then the container mounts this repository read-only
 runs `startup.sh --dry-run`, runs `startup.sh`, and verifies that the expected
 dotfiles are linked. It also checks that Neovim is reachable through
 `~/.config/nvim`, verifies key files such as `init.lua`, `lua/chadrc.lua`, and
-`lazy-lock.json`, and confirms repository-only files such as `README.md`,
+`lazy-lock.json`, runs `nvim --headless +'quitall'` with isolated XDG
+directories, and confirms repository-only files such as `README.md`,
 `startup.sh`, `install.sh`, `.stow-local-ignore`, and `tests` are not linked
 into `$HOME`.
 

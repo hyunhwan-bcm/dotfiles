@@ -65,6 +65,10 @@ assert_executable() {
   [ -x "$1" ] || fail "expected $1 to be executable"
 }
 
+assert_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "expected $1 to be installed"
+}
+
 step() {
   printf '==> %s\n' "$*"
 }
@@ -74,6 +78,8 @@ step "home: $home"
 
 step "checking startup.sh executable bit"
 assert_executable "$repo/startup.sh"
+assert_command git
+assert_command nvim
 
 step "running dry run"
 "$repo/startup.sh" --dry-run >/tmp/startup-dry-run.log
@@ -109,5 +115,21 @@ step "running startup.sh a second time"
 assert_exists "$home/.zsh_extra"
 assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
 assert_file_resolves_to_path "$home/.config/nvim/init.lua" "$repo/.config/nvim/init.lua"
+
+step "checking Neovim headless startup exits without config errors"
+rm -rf /tmp/dotfiles-nvim-repo /tmp/dotfiles-nvim-home /tmp/nvim-xdg
+cp -R "$repo" /tmp/dotfiles-nvim-repo
+mkdir -p /tmp/dotfiles-nvim-home /tmp/nvim-xdg/data /tmp/nvim-xdg/state /tmp/nvim-xdg/cache
+HOME=/tmp/dotfiles-nvim-home /tmp/dotfiles-nvim-repo/startup.sh >/tmp/startup-nvim.log
+HOME=/tmp/dotfiles-nvim-home \
+  XDG_DATA_HOME=/tmp/nvim-xdg/data \
+  XDG_STATE_HOME=/tmp/nvim-xdg/state \
+  XDG_CACHE_HOME=/tmp/nvim-xdg/cache \
+  nvim --headless +'quitall' >/tmp/nvim-headless.log 2>&1
+
+if grep -E 'Error detected|Failed to run|stacktrace|module .* not found|E[0-9][0-9]*:' /tmp/nvim-headless.log >/dev/null 2>&1; then
+  tail -100 /tmp/nvim-headless.log >&2
+  fail "expected Neovim headless startup to complete without config errors"
+fi
 
 printf '%s\n' 'startup.sh Docker smoke test passed.'
