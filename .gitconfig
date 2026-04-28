@@ -10,11 +10,10 @@
 	process = git-lfs filter-process
 	required = true
 [credential "https://github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
+	helper = !gh auth git-credential
 [credential "https://gist.github.com"]
 	helper =
-	helper = !/usr/bin/gh auth git-credential
+	helper = !gh auth git-credential
 [push]
 	autoSetupRemote = true
 [alias]
@@ -22,4 +21,4 @@
 [core]
 	excludesfile = /Users/hyun-hwanjeong/.gitignore_global
 [credential]
-	helper = store
+	helper = !gh auth git-credential
