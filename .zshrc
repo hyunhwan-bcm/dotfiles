@@ -174,8 +174,8 @@ dotfiles_update() {
 alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
 
 # run silently in background on shell startup
-nohup dotfiles_update >/dev/null 2>&1 &
-disown -h %+
+# use setsid to detach from the session entirely — avoids all job-control noise
+setsid zsh -ic 'dotfiles_update' >/dev/null 2>&1 &>/dev/null &
 
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
