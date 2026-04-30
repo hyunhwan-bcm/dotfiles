@@ -173,9 +173,11 @@ dotfiles_update() {
 # convenience alias — forces a fresh check regardless of stamp
 alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
 
-# run silently in background on shell startup
-nohup dotfiles_update >/dev/null 2>&1 &
-disown -h %+
+# run silently on shell startup
+# The function has a 24h stamp guard so it returns immediately if checked
+# recently. Running synchronously avoids job control noise and the fact
+# that nohup/setsid spawn /bin/sh which cannot find zsh functions (exit 127).
+dotfiles_update >/dev/null 2>&1
 
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
