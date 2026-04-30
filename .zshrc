@@ -132,51 +132,50 @@ oduck() {
 }
 
 # -------------------------------
-# dotfiles update helper
-# Checks for remote updates in $HOME/dotfiles and optionally pulls them
-# Prevents automatic pull if there are uncommitted changes or conflicts
+# dotfiles auto-update helper
+# Silently checks for remote updates in ~/dotfiles on shell startup
+# and pulls if the local branch is behind. Skips if there are
+# uncommitted changes, merge conflicts, or no upstream configured.
 # -------------------------------
 dotfiles_update() {
-    # Skip if already updated today
-    [ -f ~/.dotfiles_update ] && [ -n "$(find ~/.dotfiles_update -mtime -1 2>/dev/null)" ] && return
-    
-    touch ~/.dotfiles_update
-    
-    cd ~/dotfiles
-    
-    # Check for uncommitted changes or conflicts first
-    local status=$(git status --short 2>&1)
-    
-    if [ -n "$status" ]; then
-        echo "⚠️  WARNING: dotfiles update skipped due to uncommitted changes/conflicts:"
-        echo ""
-        echo "$status"
-        echo ""
-        echo "Please resolve these manually before running 'df-update' again."
-        return 1
+    local repo_dir="$HOME/dotfiles"
+    local stamp_file="$HOME/.dotfiles_update_stamp"
+
+    # --- guard: skip if already checked within the last 24h ---
+    if [ -f "$stamp_file" ]; then
+        local age_seconds=$(( $(date +%s) - $(stat -f %m "$stamp_file" 2>/dev/null || echo 0) ))
+        [ "$age_seconds" -lt 86400 ] && return 0
     fi
-    
-    # Check if there are remote updates
-    git fetch -q
-    local update_count=$(git rev-list --count HEAD..@{u} 2>/dev/null)
-    
-    if [ "$update_count" -gt 0 ]; then
-        echo "Updating dotfiles..."
-        git pull -q --rebase --autostash
-    else
-        echo "✓ No updates available."
+
+    # --- guard: repo must exist and be a git repo with an upstream ---
+    [ -d "$repo_dir/.git" ] || return 0
+    (cd "$repo_dir" && git rev-parse --abbrev-ref @{u} >/dev/null 2>&1) || return 0
+
+    # --- guard: skip if working tree is dirty or has merge conflicts ---
+    local dirty
+    dirty=$(cd "$repo_dir" && git status --porcelain 2>/dev/null)
+    [ -n "$dirty" ] && return 0
+
+    # --- fetch and check for new commits ---
+    (cd "$repo_dir" && git fetch -q origin 2>/dev/null) || return 0
+    local ahead behind
+    read ahead behind < <(cd "$repo_dir" && git rev-list --left-right --count HEAD...@{u} 2>/dev/null)
+
+    # Only pull if we are behind (remote has new commits)
+    if [ -n "$behind" ] && [ "$behind" -gt 0 ]; then
+        (cd "$repo_dir" && git pull -q --rebase origin "$(git rev-parse --abbrev-ref HEAD)" 2>/dev/null)
     fi
+
+    # --- stamp: record check time ---
+    touch "$stamp_file"
 }
 
-dotfiles_update_async() {
-    setopt localoptions nobgnice nomonitor
-    dotfiles_update >/dev/null 2>&1 &
-    disown
-}
+# convenience alias — forces a fresh check regardless of stamp
+alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
 
-# convenience aliases
-alias df-update='rm -f ~/.dotfiles_update; dotfiles_update'
-dotfiles_update_async
+# run silently in background on shell startup
+nohup dotfiles_update >/dev/null 2>&1 &
+disown -h %+
 
 # Added by Antigravity
 export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
