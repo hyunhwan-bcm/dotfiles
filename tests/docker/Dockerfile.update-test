@@ -1,0 +1,14 @@
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates curl git zsh findutils coreutils \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd -m -s /bin/zsh tester
+
+USER tester
+WORKDIR /workspace
+RUN git config --global user.email "test@test.com" && git config --global user.name "Test"
+
+COPY . .
+
+CMD ["zsh", "/workspace/tests/docker/update_test.sh"]
