@@ -118,6 +118,32 @@ assert_exists "$home/.zsh_extra"
 assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
 assert_file_resolves_to_path "$home/.config/nvim/init.lua" "$repo/.config/nvim/init.lua"
 
+step "checking ~/.zsh_extra behavior - should not overwrite existing file"
+echo "# Custom machine-specific config" > "$home/.zsh_extra"
+original_hash=$(md5sum "$home/.zsh_extra" | cut -d' ' -f1)
+"$repo/startup.sh" >/tmp/startup-third-run.log
+new_hash=$(md5sum "$home/.zsh_extra" | cut -d' ' -f1)
+[ "$original_hash" = "$new_hash" ] || fail "expected ~/.zsh_extra to remain unchanged"
+
+echo ""
+echo "=== Manual Testing Required ==="
+echo ""
+echo "To test ~/.bashrc sourcing and machine-specific removal, run manually:"
+echo ""
+echo "1. Create ~/.bashrc with test content:"
+echo "   echo 'echo test-bashrc' > ~/.bashrc"
+echo ""
+echo "2. Run startup.sh and check if ~/.bashrc is sourced in zsh:"
+echo "   ./startup.sh"
+echo ""
+echo "3. Check ~/.zshrc does not contain machine-specific paths:"
+echo "   grep -E '(antigravity|openclaw|LM Studio|HWAN-T7)' ~/.zshrc"
+echo "   (should return nothing)"
+echo ""
+echo "4. Check ~/.zsh_extra has machine-specific paths:"
+echo "   cat ~/.zsh_extra"
+echo ""
+
 step "checking Neovim headless startup exits without config errors"
 rm -rf /tmp/dotfiles-nvim-repo /tmp/dotfiles-nvim-home /tmp/nvim-xdg
 cp -R "$repo" /tmp/dotfiles-nvim-repo
