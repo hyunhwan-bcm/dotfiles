@@ -38,6 +38,7 @@ fi
 
 if [ "$dry_run" -eq 1 ]; then
   printf '%s\n' 'DRY RUN: would ensure ~/.zsh_extra exists.'
+  printf '%s\n' 'DRY RUN: would source ~/.bashrc if it exists.'
   stow --no --verbose \
     --dir="$script_dir" \
     --target="$HOME" \
@@ -62,4 +63,8 @@ else
     --ignore='.claude' \
     .
   printf '%s\n' 'Dotfiles are enabled.'
+  if [ -f "$HOME/.bashrc" ]; then
+    printf '%s\n' 'Sourcing ~/.bashrc...'
+    . "$HOME/.bashrc"
+  fi
 fi

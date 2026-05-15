@@ -86,7 +86,6 @@ if command -v fzf &>/dev/null; then
         source ~/.fzf.zsh
     fi
 fi
-source ~/.zsh_extra
 
 oduck() {
     local n=10
@@ -179,38 +178,6 @@ alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
 # that nohup/setsid spawn /bin/sh which cannot find zsh functions (exit 127).
 dotfiles_update >/dev/null 2>&1
 
-# Added by Antigravity
-export PATH="/Users/hyun-hwanjeong/.antigravity/antigravity/bin:$PATH"
-# Docker CLI completions
-[ -d "${DOCKER_CONFIG:-$HOME/.docker}/completions" ] && fpath=(${DOCKER_CONFIG:-$HOME/.docker}/completions $fpath)
-
-# opencode
-export PATH=$HOME/.opencode/bin:$PATH
-
-fpath+=~/.zfunc
-
-autoload -Uz compinit
-compinit
-
-[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
-# Disable "You have new mail" notifications
-unset MAILCHECK
-
-# kitten ssh shortcut
-alias kssh="kitten ssh"
-
-# OpenClaw Completion (only if installed)
-if [ -f "/Users/hyunhwan/.openclaw/completions/openclaw.zsh" ]; then
-    source "/Users/hyunhwan/.openclaw/completions/openclaw.zsh"
-fi
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/hyun-hwanjeong/.cache/lm-studio/bin"
-# End of LM Studio CLI section
-
-# Offloaded caches to external drive (HWAN-T7)
-if [ -d "/Volumes/HWAN-T7" ]; then
-  export RUSTUP_HOME=/Volumes/HWAN-T7/cache/rustup
-  export CARGO_HOME=/Volumes/HWAN-T7/cache/cargo
-  export UV_CACHE_DIR=/Volumes/HWAN-T7/cache/uv
-fi
+# Source ~/.zsh_extra for machine-specific configuration
+# Add your local PATH additions, aliases, and settings there
+[ -f "$HOME/.zsh_extra" ] && . "$HOME/.zsh_extra"
