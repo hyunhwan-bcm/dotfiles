@@ -80,6 +80,8 @@ step "checking startup.sh executable bit"
 assert_executable "$repo/startup.sh"
 assert_command git
 assert_command nvim
+assert_command cargo
+assert_command node
 
 step "running dry run"
 "$repo/startup.sh" --dry-run >/tmp/startup-dry-run.log

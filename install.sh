@@ -7,10 +7,12 @@
 #
 # What it does:
 #   1. Installs oh-my-zsh (if not already installed).
-#   2. Installs stow     (if not already installed).
-#   3. Backs up any conflicting dotfiles to ~/.dotfiles_backup.
-#   4. Uses GNU Stow to symlink this repo's dotfiles into $HOME.
-#   5. Creates ~/.zsh_extra if it does not exist.
+#   2. Installs cargo (Rust) (if not already installed).
+#   3. Installs stow     (if not already installed).
+#   4. Installs node (Node.js) (if not already installed).
+#   5. Backs up any conflicting dotfiles to ~/.dotfiles_backup.
+#   6. Uses GNU Stow to symlink this repo's dotfiles into $HOME.
+#   7. Creates ~/.zsh_extra if it does not exist.
 #
 # Safe to run multiple times (idempotent).
 #
@@ -42,7 +44,38 @@ install_oh_my_zsh() {
     fi
 }
 
-# ─── 2. Install stow ──────────────────────────────────────────────────────────
+# ─── 2. Install cargo (Rust) ──────────────────────────────────────────────────
+
+install_cargo() {
+    if command -v cargo &>/dev/null; then
+        ok "cargo is already installed."
+        return
+    fi
+
+    info "cargo not found. Attempting to install …"
+
+    if command -v brew &>/dev/null; then
+        brew install rustup
+    elif command -v apt-get &>/dev/null; then
+        # Install curl first if not present
+        if ! command -v curl &>/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq curl
+        fi
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    elif command -v dnf &>/dev/null; then
+        sudo dnf install -y rust cargo
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm rust
+    else
+        error "Could not detect a supported package manager (apt, brew, dnf, pacman)."
+        error "Please install Rust manually and re-run this script."
+        exit 1
+    fi
+
+    ok "cargo installed."
+}
+
+# ─── 3. Install stow ──────────────────────────────────────────────────────────
 
 install_stow() {
     if command -v stow &>/dev/null; then
@@ -69,7 +102,47 @@ install_stow() {
     ok "stow installed."
 }
 
-# ─── 3. Back up conflicting dotfiles ──────────────────────────────────────────
+# ─── 4. Install node (Node.js) ────────────────────────────────────────────────
+
+install_node() {
+    if command -v node &>/dev/null; then
+        node_version=$(node --version 2>/dev/null || true)
+        if [ -n "$node_version" ]; then
+            ok "node ($node_version) is already installed."
+            return
+        fi
+    fi
+
+    info "node not found. Attempting to install …"
+
+    if command -v brew &>/dev/null; then
+        brew install node
+    elif command -v apt-get &>/dev/null; then
+        # Install via NodeSource repository for newer versions
+        if ! command -v curl &>/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq curl
+        fi
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+        sudo apt-get install -y -qq nodejs
+    elif command -v dnf &>/dev/null; then
+        # Enable NodeSource repository
+        if ! command -v curl &>/dev/null; then
+            sudo dnf install -y curl
+        fi
+        curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+        sudo dnf install -y nodejs
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm nodejs npm
+    else
+        error "Could not detect a supported package manager (apt, brew, dnf, pacman)."
+        error "Please install Node.js manually and re-run this script."
+        exit 1
+    fi
+
+    ok "node installed."
+}
+
+# ─── 5. Back up conflicting dotfiles ──────────────────────────────────────────
 
 backup_conflicts() {
     # Build the list of files/dirs that stow would create in $HOME.
@@ -198,7 +271,9 @@ main() {
     echo ""
 
     install_oh_my_zsh
+    install_cargo
     install_stow
+    install_node
     backup_conflicts
     stow_dotfiles
     create_zsh_extra
