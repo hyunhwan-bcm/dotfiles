@@ -17,6 +17,21 @@ RUN case "$TARGETARCH" in \
   && ln -s "/opt/nvim-linux-${nvim_arch}/bin/nvim" /usr/local/bin/nvim \
   && rm /tmp/nvim.tar.gz
 
+# Install Rust (cargo) via rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Set default toolchain
+RUN . /root/.cargo/env && rustup default stable
+
+# Install Node.js via NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && apt-get install -y nodejs
+
+# Copy cargo binaries to /usr/local/bin for all users
+RUN cp /root/.cargo/bin/cargo /usr/local/bin/ && cp /root/.cargo/bin/rustc /usr/local/bin/ && cp /root/.cargo/bin/rustup /usr/local/bin/
+
+# Copy rustup configuration to tester user's home
+RUN mkdir -p /home/tester/.rustup && cp -r /root/.rustup/* /home/tester/.rustup/ && chown -R tester:tester /home/tester/.rustup
+
 USER tester
 WORKDIR /workspace
 
