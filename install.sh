@@ -142,6 +142,33 @@ install_node() {
     ok "node installed."
 }
 
+# ─── 5a. Install tmux plugins ─────────────────────────────────────────────────
+
+install_tmux_plugins() {
+    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+        info "TPM not found. Installing TPM…"
+        git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+        ok "TPM installed."
+    else
+        ok "TPM is already installed."
+    fi
+
+    # Check if tmux is running
+    if tmux -L default has-session 2>/dev/null; then
+        warn "tmux is running. Please run the following command to install plugins:"
+        printf '  %%s\n' 'Run in tmux: Ctrl+b, then I (capital i)'
+        warn "Or restart tmux and run: ~/.tmux/plugins/tpm/bin/install_plugins.sh"
+    else
+        info "Installing tmux plugins…"
+        if command -v tmux &>/dev/null; then
+            tmux run-shell '~/.tmux/plugins/tpm/bin/install_plugins.sh'
+            ok "tmux plugins installed."
+        else
+            warn "tmux not found. Skipping plugin installation."
+        fi
+    fi
+}
+
 # ─── 5. Back up conflicting dotfiles ──────────────────────────────────────────
 
 backup_conflicts() {
@@ -277,6 +304,7 @@ main() {
     backup_conflicts
     stow_dotfiles
     create_zsh_extra
+    install_tmux_plugins
 
     echo ""
     ok "All done! Open a new terminal or run 'exec zsh' to apply changes."

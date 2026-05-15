@@ -67,4 +67,13 @@ else
     printf '%s\n' 'Sourcing ~/.bashrc...'
     . "$HOME/.bashrc"
   fi
+  # Install tmux plugins
+  if command -v tmux >/dev/null 2>&1; then
+    if [ -d "$HOME/.tmux/plugins/tpm" ]; then
+      printf '%s\n' 'Installing tmux plugins...'
+      tmux run-shell '~/.tmux/plugins/tpm/bin/install_plugins.sh'
+    else
+      printf '%s\n' 'TPM not found. Please install tmux plugins manually.'
+    fi
+  fi
 fi
