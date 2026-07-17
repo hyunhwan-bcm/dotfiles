@@ -13,6 +13,7 @@ cd ~/dotfiles
 3. **Backs up conflicting dotfiles** — existing files that would conflict are moved to `~/.dotfiles_backup`. You will be prompted before anything is overwritten.
 4. **Symlinks dotfiles** — uses `stow` to create symlinks from this repo into `$HOME`.
 5. **Creates `~/.zsh_extra`** — a machine-specific config file sourced by `.zshrc`. It is *not* tracked by git.
+6. **Installs tmux plugins** — clones [TPM](https://github.com/tmux-plugins/tpm) into `~/.tmux/plugins/tpm` and runs the plugin installer. Skipped if tmux is not installed.
 
 The script is **idempotent**: running it multiple times is safe.
 
@@ -120,6 +121,31 @@ file:
 mv ~/.tmux.conf ~/.tmux.conf.backup
 ./startup.sh
 ```
+
+## tmux configuration
+
+The tmux configuration lives at `.tmux.conf` and is enabled when this repo is
+stowed into `$HOME`. It uses [TPM](https://github.com/tmux-plugins/tpm) to
+manage the following plugins:
+
+| Plugin | Purpose |
+|---|---|
+| `tmux-plugins/tpm` | Plugin manager |
+| `catppuccin/tmux` | Status bar theme (v2.1.3) |
+| `tmux-plugins/tmux-cpu` | CPU usage in status bar |
+| `tmux-plugins/tmux-battery` | Battery status in status bar |
+
+The status bar shows application, CPU usage, session name, uptime, and battery
+from left to right.
+
+`install.sh` and `startup.sh` both install TPM and run the plugin installer
+automatically. If you need to install plugins manually after setup:
+
+```sh
+~/.tmux/plugins/tpm/bin/install_plugins.sh
+```
+
+Or press `<prefix> + I` inside a running tmux session.
 
 ## Neovim configuration
 
