@@ -111,6 +111,7 @@ assert_not_exists "$home/install.sh"
 assert_not_exists "$home/.stow-local-ignore"
 assert_not_exists "$home/.gitignore"
 assert_not_exists "$home/tests"
+assert_not_exists "$home/scripts"
 
 step "running startup.sh a second time"
 "$repo/startup.sh" >/tmp/startup-second-run.log

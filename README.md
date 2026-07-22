@@ -144,3 +144,19 @@ mv ~/.config/nvim ~/.config/nvim.backup
 cd ~/dotfiles
 ./startup.sh
 ```
+
+## Pi model routing
+
+To keep Pi on OpenCode Go while using Kimi K3 for read-only planning and
+DeepSeek V4 Flash for normal implementation turns:
+
+```sh
+./scripts/configure_pi_opencode_routing.sh
+./tests/pi_model_routing_test.sh
+```
+
+The setup pins `@narumitw/pi-plan-mode`, installs a small local model-switching
+extension, and limits Pi's enabled model list to the two OpenCode Go models.
+Use `/plan` to enter planning; selecting implementation from the completed plan
+automatically restores DeepSeek V4 Flash. Existing API credentials stay in
+`~/.pi/agent/auth.json` and are never copied into this repository.
