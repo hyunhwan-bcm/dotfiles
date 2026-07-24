@@ -97,6 +97,16 @@ assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
 assert_symlink_to_path "$home/.tmux.conf" "$repo/.tmux.conf"
 assert_symlink_to_path "$home/.gitconfig" "$repo/.gitconfig"
 assert_symlink_to_path "$home/.config" "$repo/.config"
+assert_symlink_to_path "$home/alfred" "$repo/alfred"
+
+step "checking Alfred preferences archive restoration"
+assert_file_resolves_to_path \
+  "$home/alfred/Alfred.alfredpreferences.tar.gz" \
+  "$repo/alfred/Alfred.alfredpreferences.tar.gz"
+assert_executable "$home/alfred/restore.sh"
+"$home/alfred/restore.sh" "$home/alfred-restored" >/tmp/alfred-restore.log
+assert_exists "$home/alfred-restored/Alfred.alfredpreferences/preferences/prefs.plist"
+assert_exists "$home/alfred-restored/Alfred.alfredpreferences/preferences/workflows/prefs.plist"
 
 step "checking Neovim config installed through ~/.config/nvim"
 assert_file_resolves_to_path "$home/.config/nvim/init.lua" "$repo/.config/nvim/init.lua"

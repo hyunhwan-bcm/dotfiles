@@ -6,3 +6,6 @@
 gha-creds-*.json
 .claude/
 .github/
+
+# Restored Alfred preferences (the compressed backup is tracked)
+alfred/Alfred.alfredpreferences/
