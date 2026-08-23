@@ -48,6 +48,7 @@ if [ "$dry_run" -eq 1 ]; then
     --ignore='tests' \
     --ignore='.DS_Store' \
     --ignore='.claude' \
+    --ignore='.pi' \
     .
   printf '%s\n' 'Dry run complete.'
 else
@@ -61,6 +62,7 @@ else
     --ignore='tests' \
     --ignore='.DS_Store' \
     --ignore='.claude' \
+    --ignore='.pi' \
     .
   printf '%s\n' 'Dotfiles are enabled.'
   if [ -f "$HOME/.bashrc" ]; then

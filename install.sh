@@ -180,9 +180,10 @@ backup_conflicts() {
     # Collect top-level dotfiles/dirs managed by this repo
     for item in "$DOTFILES_DIR"/.*; do
         base="$(basename "$item")"
-        # Skip . , .. , .git, .gitignore, .stow-local-ignore, .DS_Store
+        # Skip . , .. , .git, .gitignore, .stow-local-ignore, .DS_Store, .pi
+        # (.pi holds live state; only agent/models.json is managed, via symlink)
         case "$base" in
-            .|..|.git|.gitignore|.stow-local-ignore|.DS_Store) continue ;;
+            .|..|.git|.gitignore|.stow-local-ignore|.DS_Store|.pi) continue ;;
         esac
         dominated_files+=("$base")
     done
@@ -266,12 +267,45 @@ backup_conflicts() {
 stow_dotfiles() {
     info "Linking dotfiles with stow …"
     # --restow re-creates symlinks (idempotent)
-    if ! stow --restow --target="$HOME" --dir="$DOTFILES_DIR" .; then
+    # .pi is ignored: ~/.pi holds live state (auth, sessions); only
+    # ~/.pi/agent/models.json is managed, via a file-level symlink (see link_pi_models).
+    if ! stow --restow --target="$HOME" --dir="$DOTFILES_DIR" --ignore='.pi' .; then
         error "stow failed. Check for conflicting files or permission issues."
         error "You may need to manually resolve conflicts and re-run this script."
         exit 1
     fi
     ok "Dotfiles linked into $HOME."
+}
+
+# ─── 4b. Link pi models config (file-level, ~/.pi is not stowed) ─────────────
+
+link_pi_models() {
+    local src="$DOTFILES_DIR/.pi/agent/models.json"
+    local dst="$HOME/.pi/agent/models.json"
+    if [ ! -f "$src" ]; then
+        ok "No .pi/agent/models.json in repo; skipping."
+        return
+    fi
+
+    mkdir -p "$HOME/.pi/agent"
+
+    if [ -L "$dst" ]; then
+        local link_dest
+        link_dest="$(readlink -f "$dst" 2>/dev/null || true)"
+        if [ "$link_dest" = "$(readlink -f "$src")" ]; then
+            ok "~/.pi/agent/models.json already linked to repo."
+            return
+        fi
+        info "Re-pointing existing symlink $dst"
+        rm "$dst"
+    elif [ -e "$dst" ]; then
+        info "Backing up $dst → $BACKUP_DIR/.pi-agent-models.json"
+        mkdir -p "$BACKUP_DIR"
+        mv "$dst" "$BACKUP_DIR/.pi-agent-models.json"
+    fi
+
+    ln -s "$src" "$dst"
+    ok "Linked $dst → $src"
 }
 
 # ─── 5. Create ~/.zsh_extra ───────────────────────────────────────────────────
@@ -303,6 +337,7 @@ main() {
     install_node
     backup_conflicts
     stow_dotfiles
+    link_pi_models
     create_zsh_extra
     install_tmux_plugins
 
