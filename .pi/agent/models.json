@@ -1,0 +1,62 @@
+{
+  "providers": {
+    "bioinfolder": {
+      "baseUrl": "http://diginda-spark.tail5aee49.ts.net:8000/v1",
+      "api": "openai-completions",
+      "compat": {
+        "supportsReasoningEffort": true
+      },
+      "models": [
+        {
+          "id": "qwen3.8-27b-no-thinking",
+          "name": "Qwen3.8 27B",
+          "input": ["text", "image"],
+          "reasoning": false,
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "samplingParams": {
+            "temperature": 0.7,
+            "top_p": 0.8,
+            "top_k": 20,
+            "chat_template_kwargs": {
+              "enable_thinking": false
+            }
+          }
+        },
+        {
+          "id": "qwen3.8-27b-nvfp4",
+          "name": "Qwen3.8 27B Thinking",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "thinkingLevelMap": {
+            "off": "none",
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": null,
+            "xhigh": "xhigh",
+            "max": null
+          },
+          "samplingParams": {
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "top_k": 20
+          },
+          "compat": {
+            "thinkingFormat": "chat-template",
+            "chatTemplateKwargs": {
+              "enable_thinking": { "$var": "thinking.enabled" },
+              "preserve_thinking": true,
+              "reasoning_effort": { "$var": "thinking.effort", "omitWhenOff": true }
+            }
+          }
+        }
+      ],
+      "headers": {
+        "User-Agent": "pi-coding-agent/0.84.2"
+      }
+    }
+  }
+}
