@@ -16,4 +16,9 @@ return {
     "nvim-treesitter/nvim-treesitter",
     branch = "master",
   },
+
+  {
+    "ChmaraX/herdr-nvim",
+    opts = {},
+  },
 }
