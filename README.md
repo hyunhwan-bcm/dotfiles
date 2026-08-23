@@ -12,7 +12,8 @@ cd ~/dotfiles
 2. **Installs GNU Stow** — via `apt`, `brew`, `dnf`, or `pacman`; skipped if already installed.
 3. **Backs up conflicting dotfiles** — existing files that would conflict are moved to `~/.dotfiles_backup`. You will be prompted before anything is overwritten.
 4. **Symlinks dotfiles** — uses `stow` to create symlinks from this repo into `$HOME`.
-5. **Creates `~/.zsh_extra`** — a machine-specific config file sourced by `.zshrc`. It is *not* tracked by git.
+5. **Links Pi agent config** — `~/.pi/agent/models.json` and `~/.pi/agent/settings.json` are symlinked into this repo (file-level, since `~/.pi` is not stowed).
+6. **Creates `~/.zsh_extra`** — a machine-specific config file sourced by `.zshrc`. It is *not* tracked by git.
 
 The script is **idempotent**: running it multiple times is safe.
 
@@ -24,6 +25,8 @@ The script is **idempotent**: running it multiple times is safe.
 | `.gitconfig` | Git settings |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
+| `.pi/agent/models.json` | Pi agent model config (file-level symlink, not stowed) |
+| `.pi/agent/settings.json` | Pi agent settings (file-level symlink, not stowed) |
 
 ## `.zsh_extra`
 
