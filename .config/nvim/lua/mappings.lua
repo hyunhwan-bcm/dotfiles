@@ -10,6 +10,4 @@ vim.keymap.set({ "n", "i", "v" }, "<Down>", "<Nop>", opts)
 vim.keymap.set({ "n", "i", "v" }, "<Left>", "<Nop>", opts)
 vim.keymap.set({ "n", "i", "v" }, "<Right>", "<Nop>", opts)
 
--- Window navigation is handled by vim-tmux-navigator plugin
-
 vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { silent = true })

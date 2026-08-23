@@ -142,33 +142,6 @@ install_node() {
     ok "node installed."
 }
 
-# ─── 5a. Install tmux plugins ─────────────────────────────────────────────────
-
-install_tmux_plugins() {
-    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-        info "TPM not found. Installing TPM…"
-        git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-        ok "TPM installed."
-    else
-        ok "TPM is already installed."
-    fi
-
-    # Check if tmux is running
-    if tmux -L default has-session 2>/dev/null; then
-        warn "tmux is running. Please run the following command to install plugins:"
-        printf '  %%s\n' 'Run in tmux: Ctrl+b, then I (capital i)'
-        warn "Or restart tmux and run: ~/.tmux/plugins/tpm/bin/install_plugins.sh"
-    else
-        info "Installing tmux plugins…"
-        if command -v tmux &>/dev/null; then
-            tmux run-shell '~/.tmux/plugins/tpm/bin/install_plugins.sh'
-            ok "tmux plugins installed."
-        else
-            warn "tmux not found. Skipping plugin installation."
-        fi
-    fi
-}
-
 # ─── 5. Back up conflicting dotfiles ──────────────────────────────────────────
 
 backup_conflicts() {
@@ -181,7 +154,8 @@ backup_conflicts() {
     for item in "$DOTFILES_DIR"/.*; do
         base="$(basename "$item")"
         # Skip . , .. , .git, .gitignore, .stow-local-ignore, .DS_Store, .pi
-        # (.pi holds live state; only agent/models.json is managed, via symlink)
+        # (.pi holds live state; agent/models.json and agent/settings.json are
+        # managed, via symlinks)
         case "$base" in
             .|..|.git|.gitignore|.stow-local-ignore|.DS_Store|.pi) continue ;;
         esac
@@ -268,7 +242,8 @@ stow_dotfiles() {
     info "Linking dotfiles with stow …"
     # --restow re-creates symlinks (idempotent)
     # .pi is ignored: ~/.pi holds live state (auth, sessions); only
-    # ~/.pi/agent/models.json is managed, via a file-level symlink (see link_pi_models).
+    # ~/.pi/agent/models.json and ~/.pi/agent/settings.json are managed, via
+    # file-level symlinks (see link_pi_agent_files).
     if ! stow --restow --target="$HOME" --dir="$DOTFILES_DIR" --ignore='.pi' .; then
         error "stow failed. Check for conflicting files or permission issues."
         error "You may need to manually resolve conflicts and re-run this script."
@@ -277,35 +252,40 @@ stow_dotfiles() {
     ok "Dotfiles linked into $HOME."
 }
 
-# ─── 4b. Link pi models config (file-level, ~/.pi is not stowed) ─────────────
+# ─── 4b. Link pi agent config (file-level, ~/.pi is not stowed) ──────────────
 
-link_pi_models() {
-    local src="$DOTFILES_DIR/.pi/agent/models.json"
-    local dst="$HOME/.pi/agent/models.json"
-    if [ ! -f "$src" ]; then
-        ok "No .pi/agent/models.json in repo; skipping."
-        return
-    fi
+link_pi_agent_files() {
+    local files=("models.json" "settings.json")
+    local file src dst
 
-    mkdir -p "$HOME/.pi/agent"
-
-    if [ -L "$dst" ]; then
-        local link_dest
-        link_dest="$(readlink -f "$dst" 2>/dev/null || true)"
-        if [ "$link_dest" = "$(readlink -f "$src")" ]; then
-            ok "~/.pi/agent/models.json already linked to repo."
-            return
+    for file in "${files[@]}"; do
+        src="$DOTFILES_DIR/.pi/agent/$file"
+        dst="$HOME/.pi/agent/$file"
+        if [ ! -f "$src" ]; then
+            ok "No .pi/agent/$file in repo; skipping."
+            continue
         fi
-        info "Re-pointing existing symlink $dst"
-        rm "$dst"
-    elif [ -e "$dst" ]; then
-        info "Backing up $dst → $BACKUP_DIR/.pi-agent-models.json"
-        mkdir -p "$BACKUP_DIR"
-        mv "$dst" "$BACKUP_DIR/.pi-agent-models.json"
-    fi
 
-    ln -s "$src" "$dst"
-    ok "Linked $dst → $src"
+        mkdir -p "$HOME/.pi/agent"
+
+        if [ -L "$dst" ]; then
+            local link_dest
+            link_dest="$(readlink -f "$dst" 2>/dev/null || true)"
+            if [ "$link_dest" = "$(readlink -f "$src")" ]; then
+                ok "~/.pi/agent/$file already linked to repo."
+                continue
+            fi
+            info "Re-pointing existing symlink $dst"
+            rm "$dst"
+        elif [ -e "$dst" ]; then
+            info "Backing up $dst → $BACKUP_DIR/.pi-agent-$file"
+            mkdir -p "$BACKUP_DIR"
+            mv "$dst" "$BACKUP_DIR/.pi-agent-$file"
+        fi
+
+        ln -s "$src" "$dst"
+        ok "Linked $dst → $src"
+    done
 }
 
 # ─── 5. Create ~/.zsh_extra ───────────────────────────────────────────────────
@@ -337,9 +317,8 @@ main() {
     install_node
     backup_conflicts
     stow_dotfiles
-    link_pi_models
+    link_pi_agent_files
     create_zsh_extra
-    install_tmux_plugins
 
     echo ""
     ok "All done! Open a new terminal or run 'exec zsh' to apply changes."
