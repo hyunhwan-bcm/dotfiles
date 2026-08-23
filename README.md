@@ -22,7 +22,6 @@ The script is **idempotent**: running it multiple times is safe.
 |---|---|
 | `.zshrc` | Zsh configuration (oh-my-zsh, plugins, aliases) |
 | `.gitconfig` | Git settings |
-| `.tmux.conf` | tmux configuration |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
 
@@ -113,11 +112,11 @@ secrets, PATH additions, aliases, and local overrides there. The tracked
 `.zshrc` sources it during shell startup.
 
 If Stow reports conflicts, move or back up the existing target files first, then
-run the command again. For example, if `~/.tmux.conf` already exists as a normal
+run the command again. For example, if `~/.gitconfig` already exists as a normal
 file:
 
 ```sh
-mv ~/.tmux.conf ~/.tmux.conf.backup
+mv ~/.gitconfig ~/.gitconfig.backup
 ./startup.sh
 ```
 

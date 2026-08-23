@@ -94,7 +94,6 @@ assert_exists "$home/.zsh_extra"
 
 step "checking core dotfile links"
 assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
-assert_symlink_to_path "$home/.tmux.conf" "$repo/.tmux.conf"
 assert_symlink_to_path "$home/.gitconfig" "$repo/.gitconfig"
 assert_symlink_to_path "$home/.config" "$repo/.config"
 assert_symlink_to_path "$home/alfred" "$repo/alfred"
