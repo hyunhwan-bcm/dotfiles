@@ -178,6 +178,146 @@ alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
 # that nohup/setsid spawn /bin/sh which cannot find zsh functions (exit 127).
 dotfiles_update >/dev/null 2>&1
 
+# -------------------------------
+# CLI freshness check (pi, claude, codex)
+# On shell startup, at most once per day (24h stamp):
+#   - missing CLI  → prompt with the install command (y/N)
+#   - outdated CLI → auto-update silently (built-in updaters: pi update,
+#     codex update, claude update)
+# Prints a one-line summary. Runs synchronously (like dotfiles_update)
+# so install prompts can use the terminal; the 24h stamp guard keeps
+# normal logins fast.
+# -------------------------------
+
+# ver_gt A B → 0 if A > B (numeric dot-separated versions)
+ver_gt() {
+    local a b
+    a=(${(s/./)1})
+    b=(${(s/./)2})
+    local i
+    for i in 1 2 3; do
+        (( ${a[i]:-0} > ${b[i]:-0} )) && return 0
+        (( ${a[i]:-0} < ${b[i]:-0} )) && return 1
+    done
+    return 1
+}
+
+# Print the first semver found in $1
+ver_extract() {
+    printf '%s' "$1" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+}
+
+cli_freshness_check() {
+    local stamp="$HOME/.cli_freshness_stamp"
+
+    # --- guard: skip if already checked within the last 24h ---
+    if [ -f "$stamp" ]; then
+        local mtime
+        mtime=$(stat -f %m "$stamp" 2>/dev/null || stat -c %Y "$stamp" 2>/dev/null || echo 0)
+        [ $(( $(date +%s) - mtime )) -lt 86400 ] && return 0
+    fi
+
+    command -v npm >/dev/null 2>&1 || return 0
+
+    local results=()
+    local cur latest answer
+    local npmview_opts=(--fetch-timeout=15000 --fetch-retries=1)
+
+    # --- pi (@earendil-works/pi-coding-agent) ---
+    if ! command -v pi >/dev/null 2>&1; then
+        if [ -t 0 ]; then
+            printf '[cli] pi is not installed.\n'
+            printf '      Install with: npm install -g @earendil-works/pi-coding-agent\n'
+            printf '      Install now? [y/N] '
+            read -r answer
+            case "$answer" in
+                [yY]*) npm install -g @earendil-works/pi-coding-agent >/dev/null 2>&1 \
+                    && results+=("pi: installed") || results+=("pi: install FAILED") ;;
+                *) results+=("pi: MISSING (skipped)") ;;
+            esac
+        else
+            results+=("pi: MISSING — npm install -g @earendil-works/pi-coding-agent")
+        fi
+    else
+        cur=$(ver_extract "$(pi --version 2>/dev/null)")
+        latest=$(npm view "${npmview_opts[@]}" @earendil-works/pi-coding-agent version 2>/dev/null)
+        if [ -n "$latest" ] && [ -n "$cur" ] && ver_gt "$latest" "$cur" ]; then
+            pi update >/dev/null 2>&1 \
+                && results+=("pi: $cur → $latest") || results+=("pi: update FAILED (run: pi update)")
+        else
+            results+=("pi: $cur ✓")
+        fi
+    fi
+
+    # --- codex (@openai/codex) ---
+    if ! command -v codex >/dev/null 2>&1; then
+        if [ -t 0 ]; then
+            printf '[cli] codex is not installed.\n'
+            printf '      Install with: npm install -g @openai/codex\n'
+            printf '      Install now? [y/N] '
+            read -r answer
+            case "$answer" in
+                [yY]*) npm install -g @openai/codex >/dev/null 2>&1 \
+                    && results+=("codex: installed") || results+=("codex: install FAILED") ;;
+                *) results+=("codex: MISSING (skipped)") ;;
+            esac
+        else
+            results+=("codex: MISSING — npm install -g @openai/codex")
+        fi
+    else
+        cur=$(ver_extract "$(codex --version 2>/dev/null)")
+        latest=$(npm view "${npmview_opts[@]}" @openai/codex version 2>/dev/null)
+        if [ -n "$latest" ] && [ -n "$cur" ] && ver_gt "$latest" "$cur" ]; then
+            codex update >/dev/null 2>&1 \
+                && results+=("codex: $cur → $latest") || results+=("codex: update FAILED (run: codex update)")
+        else
+            results+=("codex: $cur ✓")
+        fi
+    fi
+
+    # --- claude (@anthropic-ai/claude-code, native installer) ---
+    if ! command -v claude >/dev/null 2>&1; then
+        if [ -t 0 ]; then
+            printf '[cli] claude is not installed.\n'
+            printf '      Install with: curl -fsSL https://claude.ai/install.sh | bash\n'
+            printf '      Install now? [y/N] '
+            read -r answer
+            case "$answer" in
+                [yY]*) curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1 \
+                    && results+=("claude: installed") || results+=("claude: install FAILED") ;;
+                *) results+=("claude: MISSING (skipped)") ;;
+            esac
+        else
+            results+=("claude: MISSING — curl -fsSL https://claude.ai/install.sh | bash")
+        fi
+    else
+        cur=$(ver_extract "$(claude --version 2>/dev/null)")
+        latest=$(npm view "${npmview_opts[@]}" @anthropic-ai/claude-code version 2>/dev/null)
+        if [ -n "$latest" ] && [ -n "$cur" ] && ver_gt "$latest" "$cur" ]; then
+            claude update >/dev/null 2>&1 \
+                && results+=("claude: $cur → $latest") || results+=("claude: update FAILED (run: claude update)")
+        else
+            results+=("claude: $cur ✓")
+        fi
+    fi
+
+    touch "$stamp"
+    local summary="" r
+    for r in "${results[@]}"; do
+        if [ -z "$summary" ]; then summary="$r"; else summary+=" | $r"; fi
+    done
+    printf '[cli] %s\n' "$summary"
+}
+
+# convenience alias — forces a fresh check regardless of stamp
+alias cli-check='rm -f ~/.cli_freshness_stamp; cli_freshness_check'
+
+# run on shell startup (24h stamp guard makes this a no-op most logins)
+cli_freshness_check
+
 # Source ~/.zsh_extra for machine-specific configuration
 # Add your local PATH additions, aliases, and settings there
 [ -f "$HOME/.zsh_extra" ] && . "$HOME/.zsh_extra"
+
+# Added by cua-driver-rs installer — see https://github.com/trycua/cua
+export PATH="/Users/2katz/.local/bin:$PATH"
