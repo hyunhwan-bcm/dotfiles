@@ -8,3 +8,28 @@ gha-creds-*.json
 
 # Restored Alfred preferences (the compressed backup is tracked)
 alfred/Alfred.alfredpreferences/
+
+# --- Credentials, tokens and account state (never commit) ---
+.config/gcloud/
+.config/gh/hosts.yml
+.config/github-copilot/
+.config/op/
+.config/1Password/
+.config/colab-cli/
+.config/marimo/
+.config/hunk/
+.config/cagent/
+.config/flutter/
+.config/configstore/
+.config/herdr/session.json
+.config/herdr/release-notes.json
+.config/herdr/.plugins.lock
+.config/herdr/*.log
+
+# --- Caches, backups and generated assets ---
+.config/raycast/
+.config/texstudio/
+.config/karabiner/automatic_backups/
+.config/karabiner/*.bak-*
+.config/opencode/*.bak
+.config/zed/prompts/
