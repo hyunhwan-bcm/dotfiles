@@ -18,7 +18,11 @@
 	autoSetupRemote = true
 [alias]
 	adog = log --all --decorate --oneline --graph
+	wdiff = diff --word-diff=color --word-diff-regex=[^[:space:]]+
 [core]
 	excludesfile = /Users/hyun-hwanjeong/.gitignore_global
 [credential]
-	helper = !gh auth git-credential
+	helper = store
+[color "diff"]
+	old = red bold strike
+	new = green bold
