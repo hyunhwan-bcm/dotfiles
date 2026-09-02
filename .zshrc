@@ -315,6 +315,36 @@ alias cli-check='rm -f ~/.cli_freshness_stamp; cli_freshness_check'
 # run on shell startup (24h stamp guard makes this a no-op most logins)
 cli_freshness_check
 
+# ── SSH: one 1Password key everywhere ────────────────────────────────────────
+# Desktop with 1Password  → talk to its agent socket.
+# Inside an SSH session   → keep the agent forwarded from the origin machine,
+#                           but expose it at a stable path so shells that
+#                           outlive the connection (tmux, screen) still find
+#                           the current one after a reconnect.
+if [ -n "$SSH_CONNECTION" ]; then
+    _stable_sock="$HOME/.ssh/agent.sock"
+    if [ -S "$SSH_AUTH_SOCK" ] && [ "$SSH_AUTH_SOCK" != "$_stable_sock" ]; then
+        ln -sf "$SSH_AUTH_SOCK" "$_stable_sock"
+    fi
+    [ -S "$_stable_sock" ] && export SSH_AUTH_SOCK="$_stable_sock"
+    unset _stable_sock
+else
+    for _sock in \
+        "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" \
+        "$HOME/.1password/agent.sock"; do
+        if [ -S "$_sock" ]; then
+            export SSH_AUTH_SOCK="$_sock"
+            break
+        fi
+    done
+    unset _sock
+fi
+
+# Repo-only helper scripts (bin/ is not stowed): ssh-enroll-1password, …
+_dotfiles_bin="${${(%):-%x}:A:h}/bin"
+[ -d "$_dotfiles_bin" ] && export PATH="$_dotfiles_bin:$PATH"
+unset _dotfiles_bin
+
 # Source ~/.zsh_extra for machine-specific configuration
 # Add your local PATH additions, aliases, and settings there
 [ -f "$HOME/.zsh_extra" ] && . "$HOME/.zsh_extra"

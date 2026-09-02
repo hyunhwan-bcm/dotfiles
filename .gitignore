@@ -8,3 +8,8 @@ gha-creds-*.json
 
 # Restored Alfred preferences (the compressed backup is tracked)
 alfred/Alfred.alfredpreferences/
+
+# ~/.ssh is never stowed; only the tracked config and public key live here
+.ssh/*
+!.ssh/config
+!.ssh/*.pub

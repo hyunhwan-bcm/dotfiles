@@ -88,6 +88,11 @@ step "running dry run"
 assert_not_exists "$home/.zsh_extra"
 assert_not_exists "$home/.zshrc"
 
+step "seeding a hand-written ~/.ssh/config to check migration"
+mkdir -p "$home/.ssh"
+printf 'Host legacy\n  HostName legacy.example.com\n' > "$home/.ssh/config"
+printf 'ssh-ed25519 AAAAexisting existing@key' > "$home/.ssh/authorized_keys"   # no trailing newline on purpose
+
 step "running startup.sh"
 "$repo/startup.sh" >/tmp/startup.log
 assert_exists "$home/.zsh_extra"
@@ -97,6 +102,24 @@ assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
 assert_symlink_to_path "$home/.gitconfig" "$repo/.gitconfig"
 assert_symlink_to_path "$home/.config" "$repo/.config"
 assert_symlink_to_path "$home/alfred" "$repo/alfred"
+
+step "checking ~/.ssh is a real directory with file-level links (never stowed)"
+[ -d "$home/.ssh" ] && [ ! -L "$home/.ssh" ] || fail "expected $home/.ssh to be a real directory"
+assert_symlink_to_path "$home/.ssh/config" "$repo/.ssh/config"
+assert_symlink_to_path "$home/.ssh/id_1password.pub" "$repo/.ssh/id_1password.pub"
+[ "$(stat -c %a "$home/.ssh")" = "700" ] || fail "expected $home/.ssh to be mode 700"
+
+step "checking the hand-written ssh config moved to ~/.ssh/config.local"
+assert_exists "$home/.ssh/config.local"
+grep -q 'legacy.example.com' "$home/.ssh/config.local" || fail "expected legacy ssh config in config.local"
+grep -q 'Include ~/.ssh/config.local' "$home/.ssh/config" || fail "expected tracked config to Include config.local"
+
+step "checking the 1Password public key is authorized"
+key_blob=$(awk '{ print $2 }' "$repo/.ssh/id_1password.pub")
+grep -qF "$key_blob" "$home/.ssh/authorized_keys" || fail "expected 1Password key in authorized_keys"
+grep -q '^ssh-ed25519 AAAAexisting existing@key$' "$home/.ssh/authorized_keys" || fail "expected pre-existing authorized key to survive intact"
+[ "$(wc -l < "$home/.ssh/authorized_keys")" -eq 2 ] || fail "expected exactly 2 lines in authorized_keys"
+[ "$(stat -c %a "$home/.ssh/authorized_keys")" = "600" ] || fail "expected authorized_keys to be mode 600"
 
 step "checking Alfred preferences archive restoration"
 assert_file_resolves_to_path \
@@ -120,10 +143,14 @@ assert_not_exists "$home/install.sh"
 assert_not_exists "$home/.stow-local-ignore"
 assert_not_exists "$home/.gitignore"
 assert_not_exists "$home/tests"
+assert_not_exists "$home/bin"
 
 step "running startup.sh a second time"
 "$repo/startup.sh" >/tmp/startup-second-run.log
 assert_exists "$home/.zsh_extra"
+assert_symlink_to_path "$home/.ssh/config" "$repo/.ssh/config"
+[ "$(grep -cF "$key_blob" "$home/.ssh/authorized_keys")" -eq 1 ] || fail "expected authorized_keys entry not to be duplicated"
+assert_not_exists "$home/.ssh/config.d"
 assert_symlink_to_path "$home/.zshrc" "$repo/.zshrc"
 assert_file_resolves_to_path "$home/.config/nvim/init.lua" "$repo/.config/nvim/init.lua"
 
