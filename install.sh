@@ -12,7 +12,9 @@
 #   4. Installs node (Node.js) (if not already installed).
 #   5. Backs up any conflicting dotfiles to ~/.dotfiles_backup.
 #   6. Uses GNU Stow to symlink this repo's dotfiles into $HOME.
-#   7. Creates ~/.zsh_extra if it does not exist.
+#   7. Links ~/.ssh/config and the 1Password public key, and authorizes that
+#      key for logins to this machine (~/.ssh itself is never stowed).
+#   8. Creates ~/.zsh_extra if it does not exist.
 #
 # Safe to run multiple times (idempotent).
 #
@@ -153,11 +155,11 @@ backup_conflicts() {
     # Collect top-level dotfiles/dirs managed by this repo
     for item in "$DOTFILES_DIR"/.*; do
         base="$(basename "$item")"
-        # Skip . , .. , .git, .gitignore, .stow-local-ignore, .DS_Store, .pi
-        # (.pi holds live state; agent/models.json and agent/settings.json are
-        # managed, via symlinks)
+        # Skip . , .. , .git, .gitignore, .stow-local-ignore, .DS_Store, .pi, .ssh
+        # (.pi and .ssh hold live state; individual files inside them are
+        # managed via file-level symlinks, see link_pi_agent_files/link_ssh_files)
         case "$base" in
-            .|..|.git|.gitignore|.stow-local-ignore|.DS_Store|.pi) continue ;;
+            .|..|.git|.gitignore|.stow-local-ignore|.DS_Store|.pi|.ssh) continue ;;
         esac
         dominated_files+=("$base")
     done
@@ -288,6 +290,85 @@ link_pi_agent_files() {
     done
 }
 
+# ─── 4c. Link SSH config + 1Password key (file-level, ~/.ssh is not stowed) ──
+#
+# ~/.ssh must stay a real directory: if stow folded it into the repo, private
+# keys and known_hosts would land in the git working tree. So only two files
+# are linked: the tracked config and the 1Password public key. The public key
+# is also appended to ~/.ssh/authorized_keys so that this machine accepts the
+# one key that lives in 1Password.
+
+link_ssh_files() {
+    local ssh_dir="$HOME/.ssh"
+
+    if [ -L "$ssh_dir" ]; then
+        error "$ssh_dir is a symlink; it must be a real directory. Refusing to touch it."
+        exit 1
+    fi
+    mkdir -p "$ssh_dir"
+    chmod 700 "$ssh_dir"
+
+    # A hand-written ~/.ssh/config becomes ~/.ssh/config.local, which the
+    # tracked config Includes first (so its entries keep winning).
+    local cfg="$ssh_dir/config"
+    if [ -f "$cfg" ] && [ ! -L "$cfg" ]; then
+        local dest="$ssh_dir/config.local"
+        if [ -e "$dest" ]; then
+            mkdir -p "$ssh_dir/config.d"
+            dest="$ssh_dir/config.d/migrated-$(date +%Y%m%d%H%M%S)"
+        fi
+        info "Moving unmanaged $cfg → $dest"
+        mv "$cfg" "$dest"
+    fi
+    [ -e "$ssh_dir/config.local" ] || : > "$ssh_dir/config.local"
+
+    local file src dst link_dest
+    for file in config id_1password.pub; do
+        src="$DOTFILES_DIR/.ssh/$file"
+        dst="$ssh_dir/$file"
+        [ -f "$src" ] || { ok "No .ssh/$file in repo; skipping."; continue; }
+
+        if [ -L "$dst" ]; then
+            link_dest="$(readlink -f "$dst" 2>/dev/null || true)"
+            if [ "$link_dest" = "$(readlink -f "$src")" ]; then
+                ok "~/.ssh/$file already linked to repo."
+                continue
+            fi
+            info "Re-pointing existing symlink $dst"
+            rm "$dst"
+        elif [ -e "$dst" ]; then
+            info "Backing up $dst → $BACKUP_DIR/.ssh-$file"
+            mkdir -p "$BACKUP_DIR"
+            mv "$dst" "$BACKUP_DIR/.ssh-$file"
+        fi
+        ln -s "$src" "$dst"
+        ok "Linked $dst → $src"
+    done
+
+    authorize_1password_key
+}
+
+authorize_1password_key() {
+    local pub="$DOTFILES_DIR/.ssh/id_1password.pub"
+    local ak="$HOME/.ssh/authorized_keys"
+    [ -f "$pub" ] || return 0
+
+    local blob
+    blob="$(awk '{ print $2 }' "$pub")"
+    touch "$ak"
+    chmod 600 "$ak"
+    if grep -qF -- "$blob" "$ak"; then
+        ok "1Password key already in ~/.ssh/authorized_keys."
+        return 0
+    fi
+    # Keep the file well-formed if it currently lacks a trailing newline.
+    if [ -s "$ak" ] && [ -n "$(tail -c1 "$ak")" ]; then
+        echo >> "$ak"
+    fi
+    cat "$pub" >> "$ak"
+    ok "Added 1Password key to ~/.ssh/authorized_keys."
+}
+
 # ─── 5. Create ~/.zsh_extra ───────────────────────────────────────────────────
 
 create_zsh_extra() {
@@ -318,6 +399,7 @@ main() {
     backup_conflicts
     stow_dotfiles
     link_pi_agent_files
+    link_ssh_files
     create_zsh_extra
 
     echo ""

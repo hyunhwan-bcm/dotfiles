@@ -27,6 +27,47 @@ The script is **idempotent**: running it multiple times is safe.
 | `.config/nvim/` | Neovim configuration |
 | `.pi/agent/models.json` | Pi agent model config (file-level symlink, not stowed) |
 | `.pi/agent/settings.json` | Pi agent settings (file-level symlink, not stowed) |
+| `.ssh/config` | SSH client config: 1Password agent + tailnet hosts (file-level symlink, not stowed) |
+| `.ssh/id_1password.pub` | Public half of the one SSH key kept in 1Password (file-level symlink, not stowed) |
+| `bin/ssh-enroll-1password` | Pushes that public key to tailnet machines (repo-only, added to `PATH`) |
+
+## SSH over Tailscale with one key in 1Password
+
+Every machine on the tailnet is reachable by its MagicDNS name with the same
+SSH key, and that key never leaves 1Password. The pieces:
+
+- **`~/.ssh/config`** (tracked) selects the 1Password SSH agent when it is
+  running locally, turns on agent forwarding and connection multiplexing for
+  tailnet hosts, and maps bare names such as `studio` to their
+  `*.tail5aee49.ts.net` address. Per-host login names live in the tailnet
+  section; add a `Host` block there when a device joins.
+- **`~/.ssh/config.local`** (untracked) is `Include`d first, so anything
+  machine-specific or private goes there and wins. On first install an
+  existing hand-written `~/.ssh/config` is moved to this file automatically.
+- **`~/.ssh/id_1password.pub`** (tracked) is the public key. `install.sh` and
+  `startup.sh` append it to `~/.ssh/authorized_keys`, so running the dotfiles
+  on a machine is enough to let the 1Password key log in to it.
+- **`.zshrc`** exports `SSH_AUTH_SOCK`: the 1Password socket on a desktop, or
+  the forwarded agent (via a stable `~/.ssh/agent.sock` link) inside an SSH
+  session, so hops between machines keep using the same key.
+
+`~/.ssh` itself is never stowed; only those two files are symlinked.
+
+To enrol machines that do not run these dotfiles yet, from a machine with
+1Password unlocked:
+
+```bash
+ssh-enroll-1password                  # every online Linux/macOS tailnet peer
+ssh-enroll-1password anjanda jani-spark
+ssh-enroll-1password someone@mac-mini # override the login name for one host
+```
+
+It uses `ssh-copy-id`, so it authenticates however the host allows today
+(existing key or password) and appends the 1Password key remotely.
+
+Requirements on each desktop: 1Password with **Settings → Developer → Use the
+SSH agent** enabled. On Linux servers nothing extra is needed; the agent is
+forwarded from wherever you started.
 
 ## `.zsh_extra`
 
