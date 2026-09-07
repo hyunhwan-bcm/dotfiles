@@ -23,6 +23,7 @@ The script is **idempotent**: running it multiple times is safe.
 | File / Directory | Purpose |
 |---|---|
 | `.zshrc` | Zsh configuration (oh-my-zsh, vi-mode keybindings with mode indicator, aliases) |
+| `tools/check_for_update.zsh` | Daily background self-update of this repo, see below |
 | `.gitconfig` | Git settings |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
@@ -30,6 +31,49 @@ The script is **idempotent**: running it multiple times is safe.
 | `.config/ssh/tailnet.conf` | SSH host aliases for the Tailscale nodes, included from `~/.ssh/config` by `install.sh` |
 | `.pi/agent/models.json` | Pi agent model config (file-level symlink, not stowed) |
 | `.pi/agent/settings.json` | Pi agent settings (file-level symlink, not stowed) |
+
+## Automatic updates
+
+Every interactive shell sources `tools/check_for_update.zsh`, modeled on
+oh-my-zsh's `check_for_upgrade.sh`. Once a day it forks a background job after
+the first prompt, so startup never waits on the network. The job fetches and,
+if the branch is behind its upstream, runs `git pull --rebase` with
+`rebase.autoStash`, so local edits to tracked files (nvim's `lazy-lock.json`,
+say) are stashed and re-applied instead of blocking the update. Untracked files
+are ignored; apps drop state under `~/.config`, which is a symlink into this
+repo. After a pull it runs `install.sh --post-update` to re-stow, so new files
+get their symlinks. The result shows up at the next prompt:
+
+```
+[dotfiles] updated 8e68fcc..60ab3e7 (3 new commit(s)). Open a new shell to pick up changes.
+```
+
+Errors (a conflicting local change, a rebase in progress, no upstream) are
+reported the same way and the repo is left for you to sort out. Being offline
+is not reported.
+
+Settings, in `~/.zsh_extra`:
+
+```zsh
+zstyle ':dotfiles:update' mode reminder   # auto (default) | reminder | disabled
+zstyle ':dotfiles:update' frequency 7     # days between checks, default 1
+```
+
+`dotfiles-update` (alias `df-update`) updates right now, in the foreground.
+State lives in `~/.cache/dotfiles/update`.
+
+## Tests
+
+```bash
+# updater, in a sandbox home (also runs on macOS)
+HOME=$(mktemp -d) zsh tests/docker/update_test.sh
+
+# same, inside Debian
+docker build -f tests/docker/Dockerfile.update-test -t dotfiles-update-test . && docker run --rm dotfiles-update-test
+
+# full install smoke test
+docker build -f tests/docker/Dockerfile -t dotfiles-smoke . && docker run --rm dotfiles-smoke
+```
 
 ## `.zsh_extra`
 

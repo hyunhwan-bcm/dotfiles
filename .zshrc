@@ -184,52 +184,16 @@ oduck() {
 }
 
 # -------------------------------
-# dotfiles auto-update helper
-# Silently checks for remote updates in ~/dotfiles on shell startup
-# and pulls if the local branch is behind. Skips if there are
-# uncommitted changes, merge conflicts, or no upstream configured.
+# dotfiles auto-update
+# Once a day, in the background after the first prompt, pull new commits from
+# origin into ~/dotfiles (rebase with autostash, then re-stow) and report the
+# result at the next prompt. Everything lives in tools/check_for_update.zsh.
+#   zstyle ':dotfiles:update' mode auto|reminder|disabled   (default auto)
+#   zstyle ':dotfiles:update' frequency <days>              (default 1)
+# Run `dotfiles-update` (alias df-update) to update right now.
 # -------------------------------
-dotfiles_update() {
-    local repo_dir="$HOME/dotfiles"
-    local stamp_file="$HOME/.dotfiles_update_stamp"
-
-    # --- guard: skip if already checked within the last 24h ---
-    if [ -f "$stamp_file" ]; then
-        local age_seconds=$(( $(date +%s) - $(stat -f %m "$stamp_file" 2>/dev/null || echo 0) ))
-        [ "$age_seconds" -lt 86400 ] && return 0
-    fi
-
-    # --- guard: repo must exist and be a git repo with an upstream ---
-    [ -d "$repo_dir/.git" ] || return 0
-    (cd "$repo_dir" && git rev-parse --abbrev-ref @{u} >/dev/null 2>&1) || return 0
-
-    # --- guard: skip if working tree is dirty or has merge conflicts ---
-    local dirty
-    dirty=$(cd "$repo_dir" && git status --porcelain 2>/dev/null)
-    [ -n "$dirty" ] && return 0
-
-    # --- fetch and check for new commits ---
-    (cd "$repo_dir" && git fetch -q origin 2>/dev/null) || return 0
-    local ahead behind
-    read ahead behind < <(cd "$repo_dir" && git rev-list --left-right --count HEAD...@{u} 2>/dev/null)
-
-    # Only pull if we are behind (remote has new commits)
-    if [ -n "$behind" ] && [ "$behind" -gt 0 ]; then
-        (cd "$repo_dir" && git pull -q --rebase origin "$(git rev-parse --abbrev-ref HEAD)" 2>/dev/null)
-    fi
-
-    # --- stamp: record check time ---
-    touch "$stamp_file"
-}
-
-# convenience alias — forces a fresh check regardless of stamp
-alias df-update='rm -f ~/.dotfiles_update_stamp; dotfiles_update'
-
-# run silently on shell startup
-# The function has a 24h stamp guard so it returns immediately if checked
-# recently. Running synchronously avoids job control noise and the fact
-# that nohup/setsid spawn /bin/sh which cannot find zsh functions (exit 127).
-dotfiles_update >/dev/null 2>&1
+[ -f "$HOME/dotfiles/tools/check_for_update.zsh" ] && source "$HOME/dotfiles/tools/check_for_update.zsh"
+alias df-update='dotfiles-update'
 
 # -------------------------------
 # CLI freshness check (pi, claude, codex)

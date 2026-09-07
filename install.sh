@@ -18,6 +18,11 @@
 #
 # Safe to run multiple times (idempotent).
 #
+# install.sh --post-update
+#   Non-interactive subset used by the auto-updater (tools/check_for_update.zsh)
+#   after a git pull: re-stow, re-link pi files, ensure the ssh Include. Never
+#   installs packages or prompts; skips stow quietly if it is not installed.
+#
 
 set -euo pipefail
 
@@ -254,6 +259,21 @@ stow_dotfiles() {
     ok "Dotfiles linked into $HOME."
 }
 
+# Same as stow_dotfiles, but for the auto-updater: no exit on a missing stow
+# (a pull should not fail because a machine lacks stow), and a failure is
+# reported as a non-zero return so the updater can show it.
+restow_quietly() {
+    if ! command -v stow &>/dev/null; then
+        warn "stow not installed; new files were not linked. Run ./install.sh."
+        return 0
+    fi
+    if ! stow --restow --target="$HOME" --dir="$DOTFILES_DIR" --ignore='.pi' . 2>&1; then
+        error "stow --restow failed; fix the conflict above, then run ./install.sh"
+        return 1
+    fi
+    ok "Dotfiles re-linked into $HOME."
+}
+
 # ─── 4b. Link pi agent config (file-level, ~/.pi is not stowed) ──────────────
 
 link_pi_agent_files() {
@@ -343,7 +363,19 @@ ensure_ssh_include() {
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
+post_update() {
+    # Called by tools/check_for_update.zsh after a successful git pull.
+    restow_quietly || return 1
+    link_pi_agent_files
+    ensure_ssh_include
+}
+
 main() {
+    if [ "${1:-}" = "--post-update" ]; then
+        post_update
+        return
+    fi
+
     echo ""
     info "=== Dotfiles Installer ==="
     echo ""
