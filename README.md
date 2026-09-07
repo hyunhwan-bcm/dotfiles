@@ -14,6 +14,7 @@ cd ~/dotfiles
 4. **Symlinks dotfiles** — uses `stow` to create symlinks from this repo into `$HOME`.
 5. **Links Pi agent config** — `~/.pi/agent/models.json` and `~/.pi/agent/settings.json` are symlinked into this repo (file-level, since `~/.pi` is not stowed).
 6. **Creates `~/.zsh_extra`** — a machine-specific config file sourced by `.zshrc`. It is *not* tracked by git.
+7. **Wires SSH config** — adds `Include ~/.config/ssh/tailnet.conf` to `~/.ssh/config` so `ssh studio`, `ssh jani` etc. work on every machine.
 
 The script is **idempotent**: running it multiple times is safe.
 
@@ -25,6 +26,8 @@ The script is **idempotent**: running it multiple times is safe.
 | `.gitconfig` | Git settings |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
+| `.config/yazi/` | Yazi file manager: `vfs.toml` registers every Tailscale node as an `sftp://` filesystem, `keymap.toml` adds `g`+letter jumps to them |
+| `.config/ssh/tailnet.conf` | SSH host aliases for the Tailscale nodes, included from `~/.ssh/config` by `install.sh` |
 | `.pi/agent/models.json` | Pi agent model config (file-level symlink, not stowed) |
 | `.pi/agent/settings.json` | Pi agent settings (file-level symlink, not stowed) |
 

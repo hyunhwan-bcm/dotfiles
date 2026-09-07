@@ -1,0 +1,45 @@
+# Yazi virtual filesystems: one SFTP provider per Tailscale node.
+# Docs: https://yazi-rs.github.io/docs/configuration/vfs
+#
+# Open one with `yazi sftp://<name>` or the `g` + <Key> chords in keymap.toml.
+# Absolute remote paths: sftp://studio//Users/2katz/Downloads
+#
+# Auth: no key_file / password here on purpose. Yazi uses $SSH_AUTH_SOCK, which
+# .zshrc points at the 1Password SSH agent on macOS and which is the forwarded
+# agent when you are logged into a Linux box over ssh (ForwardAgent is on for
+# tailnet hosts in ~/.config/ssh/tailnet.conf). One key, stored in 1Password,
+# never written to disk on any machine.
+#
+# Hosts are Tailscale IPs (stable per node) so this works even where MagicDNS
+# is not resolving. Same file is shared by every machine via dotfiles; the
+# entry for the machine you are on is harmless.
+
+[sftp.studio]            # 2katz's Mac Studio        studio.tail5aee49.ts.net
+host = "100.77.133.77"
+user = "2katz"
+port = 22
+
+[sftp.diginda]           # DGX Spark                 diginda-spark.tail5aee49.ts.net
+host = "100.65.65.47"
+user = "hyunhwan"
+port = 22
+
+[sftp.jani]              # DGX Spark                 jani-spark.tail5aee49.ts.net
+host = "100.84.51.102"
+user = "hyunhwan"
+port = 22
+
+[sftp.anjanda]           # Linux                     anjanda.tail5aee49.ts.net
+host = "100.103.101.49"
+user = "hyunhwan"
+port = 22
+
+[sftp.hwan-pro-liulab]   # Hyun-hwan's MacBook Pro   hwan-pro-liulab.tail5aee49.ts.net
+host = "100.84.234.122"
+user = "hyun-hwanjeong"
+port = 22
+
+[sftp.mbp-2katz]         # 2katz's MacBook Pro       2katzs-macbook-pro.tail5aee49.ts.net
+host = "100.117.151.126"
+user = "hyunhwanj"
+port = 22

@@ -1,0 +1,28 @@
+# Yazi main config. Only overrides; defaults stay in effect.
+
+# Files opened from an sftp:// filesystem are first downloaded to a temp cache
+# under a random name with NO extension. macOS `open` chooses the app by
+# extension, so such a file lands in TextEdit. Route documents and images to
+# apps that sniff the content instead. Linux xdg-open already does this.
+[opener]
+preview = [
+	{ run = 'open -a Preview %s',  desc = "Open in Preview", for = "macos" },
+	{ run = 'xdg-open %s1',        desc = "Open",            for = "linux" },
+]
+# 7-Zip (7zz 23+) refuses "dangerous" symlinks that point through another
+# symlink and exits 2. Every macOS .app bundle has those (Framework/Libraries
+# -> Versions/Current/Libraries), so yazi's built-in extract fails on app
+# zips. Apple's ditto restores them correctly, so zips go through it on
+# macOS, into a folder named after the archive. Other archive types still use
+# the built-in extractor.
+unzip-native = [
+	{ run = 'd=%s1; d="${d%.zip}"; d="${d%.ZIP}"; mkdir -p "$d" && ditto -x -k %s1 "$d"', desc = "Extract here (ditto)", for = "macos" },
+	{ run = 'ya pub extract --list %s', desc = "Extract here", for = "linux" },
+]
+
+[open]
+prepend_rules = [
+	{ mime = "application/pdf", use = [ "preview", "reveal" ] },
+	{ mime = "image/*",         use = [ "preview", "reveal" ] },
+	{ mime = "application/zip", use = [ "unzip-native", "extract", "reveal" ] },
+]
