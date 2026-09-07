@@ -13,6 +13,8 @@
 #   5. Backs up any conflicting dotfiles to ~/.dotfiles_backup.
 #   6. Uses GNU Stow to symlink this repo's dotfiles into $HOME.
 #   7. Creates ~/.zsh_extra if it does not exist.
+#   8. Adds `Include ~/.config/ssh/tailnet.conf` to ~/.ssh/config so the
+#      shared Tailscale host aliases are available to ssh/scp/rsync.
 #
 # Safe to run multiple times (idempotent).
 #
@@ -304,6 +306,41 @@ EOF
     fi
 }
 
+# ─── 6. Wire shared SSH config into ~/.ssh/config ─────────────────────────────
+# ~/.ssh itself is NOT stowed (it holds keys and known_hosts). Instead the
+# tailnet host aliases live in .config/ssh/tailnet.conf and ~/.ssh/config just
+# includes them. `Include` must appear before any `Host` block, so it goes at
+# the top of the file.
+
+ensure_ssh_include() {
+    local ssh_dir="$HOME/.ssh"
+    local ssh_cfg="$ssh_dir/config"
+    local line='Include ~/.config/ssh/tailnet.conf'
+
+    if [ ! -f "$DOTFILES_DIR/.config/ssh/tailnet.conf" ]; then
+        ok "No .config/ssh/tailnet.conf in repo; skipping."
+        return
+    fi
+
+    mkdir -p "$ssh_dir"
+    chmod 700 "$ssh_dir"
+
+    if [ -f "$ssh_cfg" ] && grep -qxF "$line" "$ssh_cfg"; then
+        ok "~/.ssh/config already includes tailnet.conf."
+        return
+    fi
+
+    info "Adding '$line' to ~/.ssh/config …"
+    if [ -f "$ssh_cfg" ]; then
+        { printf '%s\n' "$line"; cat "$ssh_cfg"; } > "$ssh_cfg.tmp"
+        mv "$ssh_cfg.tmp" "$ssh_cfg"
+    else
+        printf '%s\n' "$line" > "$ssh_cfg"
+    fi
+    chmod 600 "$ssh_cfg"
+    ok "~/.ssh/config now includes tailnet.conf."
+}
+
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
 main() {
@@ -319,6 +356,7 @@ main() {
     stow_dotfiles
     link_pi_agent_files
     create_zsh_extra
+    ensure_ssh_include
 
     echo ""
     ok "All done! Open a new terminal or run 'exec zsh' to apply changes."
