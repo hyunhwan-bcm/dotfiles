@@ -75,7 +75,7 @@ plugins=(git vi-mode)
 # is sourced so the plugin picks them up.
 #   ESC / Ctrl-[  → NORMAL mode (vim motions: hjkl, w/b/e, dd, ciw, ...)
 #   i / a / I / A → back to INSERT mode
-#   vv            → edit the current command line in $EDITOR (nvim)
+#   V (normal) or Ctrl-X Ctrl-E (any mode) → edit the command line in $EDITOR (nvim)
 # The current mode is shown at the start of the prompt ([N] / [I]) and the
 # cursor shape changes too: block in NORMAL, thin bar in INSERT.
 # -------------------------------
@@ -88,8 +88,9 @@ VI_MODE_CURSOR_OPPEND=4                    # solid underline (e.g. after `d`, wa
 MODE_INDICATOR="%B%F{red}[N]%f%b"
 INSERT_MODE_INDICATOR="%B%F{green}[I]%f%b"
 # Delay (in 10ms units) zsh waits for a multi-key sequence. 1 = 10ms, which makes
-# ESC feel instant. Trade-off: multi-key normal-mode bindings like `vv` need
-# to be typed quickly. Raise to ~15 if `vv` is hard to trigger.
+# ESC feel instant. Trade-off: the plugin's `vv` binding is effectively dead
+# because `v` alone is bound (visual-mode) and 10ms is too short to type the
+# second `v`. We bind single-key / unbound-prefix alternatives below instead.
 KEYTIMEOUT=1
 
 source $ZSH/oh-my-zsh.sh
@@ -101,6 +102,14 @@ source $ZSH/oh-my-zsh.sh
 # prompt does not jump when switching modes.
 PROMPT="\$(vi_mode_prompt_info) ${PROMPT}"
 RPS1=''
+
+# Edit the current command line in $EDITOR (nvim). Replaces the plugin's `vv`,
+# which KEYTIMEOUT=1 makes impossible to type. `V` (visual-line) is useless on
+# a one-line buffer; Ctrl-X Ctrl-E mirrors bash/emacs and works in both modes
+# (its prefix ^X is unbound, so KEYTIMEOUT does not apply to it).
+bindkey -M vicmd 'V' edit-command-line
+bindkey -M vicmd '^X^E' edit-command-line
+bindkey -M viins '^X^E' edit-command-line
 export LANG=en_US.UTF-8
 [ -f "$HOME/.config/cache-paths.sh" ] && . "$HOME/.config/cache-paths.sh"
 
