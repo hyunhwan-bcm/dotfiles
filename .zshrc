@@ -68,7 +68,29 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git vi-mode)
+
+# -------------------------------
+# vi-mode (oh-my-zsh plugin) settings — must be set BEFORE oh-my-zsh.sh
+# is sourced so the plugin picks them up.
+#   ESC / Ctrl-[  → NORMAL mode (vim motions: hjkl, w/b/e, dd, ciw, ...)
+#   i / a / I / A → back to INSERT mode
+#   vv            → edit the current command line in $EDITOR (nvim)
+# The current mode is shown on the right side of the prompt (RPS1) and the
+# cursor shape changes too: block in NORMAL, thin bar in INSERT.
+# -------------------------------
+VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true   # redraw prompt so the indicator updates
+VI_MODE_SET_CURSOR=true                    # block cursor in NORMAL, bar in INSERT
+VI_MODE_CURSOR_NORMAL=2                    # solid block
+VI_MODE_CURSOR_INSERT=6                    # solid bar
+VI_MODE_CURSOR_VISUAL=2                    # solid block
+VI_MODE_CURSOR_OPPEND=4                    # solid underline (e.g. after `d`, waiting for a motion)
+MODE_INDICATOR="%B%F{red}[NORMAL]%f%b"
+INSERT_MODE_INDICATOR="%B%F{green}[INSERT]%f%b"
+# Delay (in 10ms units) zsh waits for a multi-key sequence. 1 = 10ms, which makes
+# ESC feel instant. Trade-off: multi-key normal-mode bindings like `vv` need
+# to be typed quickly. Raise to ~15 if `vv` is hard to trigger.
+KEYTIMEOUT=1
 
 source $ZSH/oh-my-zsh.sh
 export LANG=en_US.UTF-8

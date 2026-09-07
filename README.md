@@ -21,7 +21,7 @@ The script is **idempotent**: running it multiple times is safe.
 
 | File / Directory | Purpose |
 |---|---|
-| `.zshrc` | Zsh configuration (oh-my-zsh, plugins, aliases) |
+| `.zshrc` | Zsh configuration (oh-my-zsh, vi-mode keybindings with mode indicator, aliases) |
 | `.gitconfig` | Git settings |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
