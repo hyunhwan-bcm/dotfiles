@@ -76,7 +76,7 @@ plugins=(git vi-mode)
 #   ESC / Ctrl-[  → NORMAL mode (vim motions: hjkl, w/b/e, dd, ciw, ...)
 #   i / a / I / A → back to INSERT mode
 #   vv            → edit the current command line in $EDITOR (nvim)
-# The current mode is shown on the right side of the prompt (RPS1) and the
+# The current mode is shown at the start of the prompt ([N] / [I]) and the
 # cursor shape changes too: block in NORMAL, thin bar in INSERT.
 # -------------------------------
 VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true   # redraw prompt so the indicator updates
@@ -85,14 +85,22 @@ VI_MODE_CURSOR_NORMAL=2                    # solid block
 VI_MODE_CURSOR_INSERT=6                    # solid bar
 VI_MODE_CURSOR_VISUAL=2                    # solid block
 VI_MODE_CURSOR_OPPEND=4                    # solid underline (e.g. after `d`, waiting for a motion)
-MODE_INDICATOR="%B%F{red}[NORMAL]%f%b"
-INSERT_MODE_INDICATOR="%B%F{green}[INSERT]%f%b"
+MODE_INDICATOR="%B%F{red}[N]%f%b"
+INSERT_MODE_INDICATOR="%B%F{green}[I]%f%b"
 # Delay (in 10ms units) zsh waits for a multi-key sequence. 1 = 10ms, which makes
 # ESC feel instant. Trade-off: multi-key normal-mode bindings like `vv` need
 # to be typed quickly. Raise to ~15 if `vv` is hard to trigger.
 KEYTIMEOUT=1
 
 source $ZSH/oh-my-zsh.sh
+
+# Put the vi-mode indicator at the LEFT of the prompt, before the arrow.
+# The plugin defaults to the right prompt (RPS1), but zsh hides RPS1 as soon
+# as the command wraps onto a second line, so the mode would vanish exactly
+# when editing a long command. Both indicators are the same width so the
+# prompt does not jump when switching modes.
+PROMPT="\$(vi_mode_prompt_info) ${PROMPT}"
+RPS1=''
 export LANG=en_US.UTF-8
 [ -f "$HOME/.config/cache-paths.sh" ] && . "$HOME/.config/cache-paths.sh"
 
