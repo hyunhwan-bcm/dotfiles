@@ -68,9 +68,48 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git vi-mode)
+
+# -------------------------------
+# vi-mode (oh-my-zsh plugin) settings — must be set BEFORE oh-my-zsh.sh
+# is sourced so the plugin picks them up.
+#   ESC / Ctrl-[  → NORMAL mode (vim motions: hjkl, w/b/e, dd, ciw, ...)
+#   i / a / I / A → back to INSERT mode
+#   V (normal) or Ctrl-X Ctrl-E (any mode) → edit the command line in $EDITOR (nvim)
+# The current mode is shown at the start of the prompt ([N] / [I]) and the
+# cursor shape changes too: block in NORMAL, thin bar in INSERT.
+# -------------------------------
+VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true   # redraw prompt so the indicator updates
+VI_MODE_SET_CURSOR=true                    # block cursor in NORMAL, bar in INSERT
+VI_MODE_CURSOR_NORMAL=2                    # solid block
+VI_MODE_CURSOR_INSERT=6                    # solid bar
+VI_MODE_CURSOR_VISUAL=2                    # solid block
+VI_MODE_CURSOR_OPPEND=4                    # solid underline (e.g. after `d`, waiting for a motion)
+MODE_INDICATOR="%B%F{red}[N]%f%b"
+INSERT_MODE_INDICATOR="%B%F{green}[I]%f%b"
+# Delay (in 10ms units) zsh waits for a multi-key sequence. 1 = 10ms, which makes
+# ESC feel instant. Trade-off: the plugin's `vv` binding is effectively dead
+# because `v` alone is bound (visual-mode) and 10ms is too short to type the
+# second `v`. We bind single-key / unbound-prefix alternatives below instead.
+KEYTIMEOUT=1
 
 source $ZSH/oh-my-zsh.sh
+
+# Put the vi-mode indicator at the LEFT of the prompt, before the arrow.
+# The plugin defaults to the right prompt (RPS1), but zsh hides RPS1 as soon
+# as the command wraps onto a second line, so the mode would vanish exactly
+# when editing a long command. Both indicators are the same width so the
+# prompt does not jump when switching modes.
+PROMPT="\$(vi_mode_prompt_info) ${PROMPT}"
+RPS1=''
+
+# Edit the current command line in $EDITOR (nvim). Replaces the plugin's `vv`,
+# which KEYTIMEOUT=1 makes impossible to type. `V` (visual-line) is useless on
+# a one-line buffer; Ctrl-X Ctrl-E mirrors bash/emacs and works in both modes
+# (its prefix ^X is unbound, so KEYTIMEOUT does not apply to it).
+bindkey -M vicmd 'V' edit-command-line
+bindkey -M vicmd '^X^E' edit-command-line
+bindkey -M viins '^X^E' edit-command-line
 export LANG=en_US.UTF-8
 [ -f "$HOME/.config/cache-paths.sh" ] && . "$HOME/.config/cache-paths.sh"
 
