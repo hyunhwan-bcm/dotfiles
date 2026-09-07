@@ -31,3 +31,16 @@ desc = "Go to hwan-pro-liulab (lab MacBook Pro)"
 on   = [ "g", "M" ]
 run  = "cd sftp://mbp-2katz"
 desc = "Go to mbp-2katz (personal MacBook Pro)"
+
+# `d` moves files into <home>/.yazi-trash on the same filesystem (local or
+# sftp) instead of the OS trash. See plugins/trash-dir.yazi. `D` still
+# deletes permanently.
+[[mgr.prepend_keymap]]
+on   = "d"
+run  = "plugin trash-dir"
+desc = "Move selected files to .yazi-trash"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "T" ]
+run  = "cd ~/.yazi-trash"
+desc = "Go to ~/.yazi-trash"
