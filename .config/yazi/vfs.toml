@@ -36,7 +36,7 @@ port = 22
 
 [sftp.hwan-pro-liulab]   # Hyun-hwan's MacBook Pro   hwan-pro-liulab.tail5aee49.ts.net
 host = "100.84.234.122"
-user = "hyunhwanj"
+user = "hyun-hwanjeong"
 port = 22
 
 [sftp.mbp-2katz]         # 2katz's MacBook Pro       2katzs-macbook-pro.tail5aee49.ts.net
