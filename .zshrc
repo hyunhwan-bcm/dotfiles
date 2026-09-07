@@ -114,6 +114,20 @@ export LANG=en_US.UTF-8
 [ -f "$HOME/.config/cache-paths.sh" ] && . "$HOME/.config/cache-paths.sh"
 
 export EDITOR='nvim'
+
+# -------------------------------
+# SSH agent: use 1Password's agent when it is running (macOS app with
+# Settings → Developer → "Use the SSH agent" enabled). The one SSH key for
+# the tailnet lives in the 1Password vault, so no private key sits on disk.
+# ssh, scp, rsync and yazi's sftp:// VFS all read $SSH_AUTH_SOCK.
+# On Linux boxes this is skipped and the forwarded agent from the incoming
+# ssh session is used instead.
+# -------------------------------
+_op_agent_sock="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+if [ -S "$_op_agent_sock" ]; then
+    export SSH_AUTH_SOCK="$_op_agent_sock"
+fi
+unset _op_agent_sock
 alias vi=nvim
 alias vim=nvim
 alias ls=eza

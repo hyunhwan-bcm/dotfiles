@@ -1,0 +1,33 @@
+# Yazi keymap additions. Defaults stay intact; these are prepended.
+# Remote hosts (see vfs.toml): press `g` then an UPPERCASE letter so the
+# defaults `g h` (home), `g c` (~/.config), `g d` (~/Downloads) keep working.
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "S" ]
+run  = "cd sftp://studio"
+desc = "Go to studio (Mac Studio)"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "D" ]
+run  = "cd sftp://diginda"
+desc = "Go to diginda-spark"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "J" ]
+run  = "cd sftp://jani"
+desc = "Go to jani-spark"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "A" ]
+run  = "cd sftp://anjanda"
+desc = "Go to anjanda"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "L" ]
+run  = "cd sftp://hwan-pro-liulab"
+desc = "Go to hwan-pro-liulab (lab MacBook Pro)"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "M" ]
+run  = "cd sftp://mbp-2katz"
+desc = "Go to mbp-2katz (personal MacBook Pro)"
