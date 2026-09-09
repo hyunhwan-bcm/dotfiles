@@ -11,6 +11,7 @@ alfred/Alfred.alfredpreferences/
 
 # --- Credentials, tokens and account state (never commit) ---
 .config/gcloud/
+.config/rclone/
 .config/gh/hosts.yml
 .config/github-copilot/
 .config/op/
