@@ -89,8 +89,13 @@ theme:
         table:
             showSeparator: true
             compact: false
+# Diff pager for the `d` key. diffnav (same author as gh-dash) renders the PR
+# with a file tree on the left and a delta-highlighted diff on the right.
+#   j/k item  n/p next/prev file  t jump to file  Tab tree<->diff  e hide tree
+#   s toggle side-by-side/unified  o open in $EDITOR  q back to gh-dash
+# --unified: long Markdown lines read better unified; press `s` for side-by-side.
 pager:
-    diff: ""
+    diff: diffnav --unified
 confirmQuit: false
 showAuthorIcons: true
 smartFilteringAtLaunch: true

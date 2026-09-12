@@ -21,8 +21,17 @@
 	wdiff = diff --word-diff=color --word-diff-regex=[^[:space:]]+
 [core]
 	excludesfile = /Users/hyun-hwanjeong/.gitignore_global
+	pager = delta
 [credential]
-	helper = store
+	helper = !gh auth git-credential
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = false
+[diff]
+	colorMoved = default
 [color "diff"]
 	old = red bold strike
 	new = green bold
