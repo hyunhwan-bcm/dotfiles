@@ -18,6 +18,7 @@
 	autoSetupRemote = true
 [alias]
 	adog = log --all --decorate --oneline --graph
+	wdiff = diff --word-diff=color --word-diff-regex=[^[:space:]]+
 [core]
 	excludesfile = /Users/hyun-hwanjeong/.gitignore_global
 	pager = delta
@@ -31,3 +32,6 @@
 	side-by-side = false
 [diff]
 	colorMoved = default
+[color "diff"]
+	old = red bold strike
+	new = green bold
