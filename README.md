@@ -15,6 +15,9 @@ cd ~/dotfiles
 5. **Links Pi agent config** — `~/.pi/agent/models.json` and `~/.pi/agent/settings.json` are symlinked into this repo (file-level, since `~/.pi` is not stowed).
 6. **Creates `~/.zsh_extra`** — a machine-specific config file sourced by `.zshrc`. It is *not* tracked by git.
 7. **Wires SSH config** — adds `Include ~/.config/ssh/tailnet.conf` to `~/.ssh/config` so `ssh studio`, `ssh jani` etc. work on every machine.
+8. **Installs PR review tools** — `git-delta` (git pager), `diffnav` (gh-dash diff pager) `terminal-notifier` (macOS) and the `gh-dash` extension for the GitHub CLI. Best effort: warns and continues if a package manager is missing.
+9. **Links `tools/` scripts into `~/.local/bin`** — so `gh-pr-notify` is a normal command in any shell.
+10. **Loads the PR notifier (macOS)** — a launchd agent runs `tools/gh-pr-notify.sh` every 5 minutes and posts a desktop notification for new pull request activity (review requests, mentions, comments, CI, merges). Click a notification to open the PR. Also re-rendered by `--post-update`.
 
 The script is **idempotent**: running it multiple times is safe.
 
@@ -24,7 +27,10 @@ The script is **idempotent**: running it multiple times is safe.
 |---|---|
 | `.zshrc` | Zsh configuration (oh-my-zsh, vi-mode keybindings with mode indicator, aliases) |
 | `tools/check_for_update.zsh` | Daily background self-update of this repo, see below |
-| `.gitconfig` | Git settings |
+| `tools/gh-pr-notify.sh` | GitHub PR desktop notifications via the notifications API; `gh-pr-notify --list` shows pending items, `--test` sends a sample. Tune with `GH_PR_NOTIFY_REASONS` / `GH_PR_NOTIFY_TYPES` in `~/.zsh_extra` or the plist |
+| `tools/launchd/*.plist` | launchd template for the notifier, rendered into `~/Library/LaunchAgents` by `install.sh` |
+| `.gitconfig` | Git settings; `core.pager = delta` with line numbers, `n`/`N` file navigation and word-level diff highlighting |
+| `.config/gh-dash/config.yml` | [gh-dash](https://github.com/dlvhdr/gh-dash) PR/issue dashboard; `d` opens the PR diff in [diffnav](https://github.com/dlvhdr/diffnav) (file tree + delta rendering, unified by default, `s` toggles side-by-side) |
 | `.config/kitty/` | Kitty terminal settings |
 | `.config/nvim/` | Neovim configuration |
 | `.config/yazi/` | Yazi file manager: `vfs.toml` registers every Tailscale node as an `sftp://` filesystem, `keymap.toml` adds `g`+letter jumps to them |

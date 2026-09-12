@@ -15,6 +15,14 @@
 #   7. Creates ~/.zsh_extra if it does not exist.
 #   8. Adds `Include ~/.config/ssh/tailnet.conf` to ~/.ssh/config so the
 #      shared Tailscale host aliases are available to ssh/scp/rsync.
+#   9. Installs the PR review stack used by .gitconfig and .config/gh-dash:
+#      git-delta (git pager), diffnav (gh-dash diff pager) and the gh-dash
+#      extension for the GitHub CLI. Best effort: a missing package manager
+#      only prints a warning.
+#  10. Symlinks the runnable scripts in tools/ into ~/.local/bin (so
+#      `gh-pr-notify` works in any shell, not just interactive zsh).
+#  11. macOS: loads a launchd agent that runs tools/gh-pr-notify.sh every
+#      5 minutes for desktop notifications about pull request activity.
 #
 # Safe to run multiple times (idempotent).
 #
@@ -361,6 +369,168 @@ ensure_ssh_include() {
     ok "~/.ssh/config now includes tailnet.conf."
 }
 
+# ─── 7. PR review tools: git-delta, diffnav, gh-dash ─────────────────────────
+# .gitconfig sets core.pager = delta and .config/gh-dash/config.yml sets
+# pager.diff = diffnav, so both binaries should exist on every machine that
+# uses these dotfiles. Nothing here is fatal: on a box without a supported
+# package manager we warn and move on so the rest of the install still runs.
+
+install_pr_review_tools() {
+    # git-delta — packaged as "git-delta" everywhere, binary is "delta".
+    if command -v delta &>/dev/null; then
+        ok "delta is already installed."
+    else
+        info "delta not found. Attempting to install git-delta …"
+        if command -v brew &>/dev/null; then
+            brew install git-delta
+        elif command -v apt-get &>/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq git-delta \
+                || warn "git-delta is not in this apt repo; see https://dandavison.github.io/delta/installation.html"
+        elif command -v dnf &>/dev/null; then
+            sudo dnf install -y git-delta
+        elif command -v pacman &>/dev/null; then
+            sudo pacman -S --noconfirm git-delta
+        else
+            warn "No supported package manager; install git-delta manually (core.pager = delta needs it)."
+        fi
+        command -v delta &>/dev/null && ok "delta installed."
+    fi
+
+    # diffnav — Homebrew formula on macOS/Linuxbrew, otherwise via Go.
+    if command -v diffnav &>/dev/null; then
+        ok "diffnav is already installed."
+    else
+        info "diffnav not found. Attempting to install …"
+        if command -v brew &>/dev/null; then
+            brew install diffnav
+        elif command -v go &>/dev/null; then
+            go install github.com/dlvhdr/diffnav@latest
+        else
+            warn "Neither brew nor go found; grab a release from https://github.com/dlvhdr/diffnav/releases"
+        fi
+        command -v diffnav &>/dev/null && ok "diffnav installed."
+    fi
+
+    # terminal-notifier — clickable macOS notifications for tools/gh-pr-notify.sh.
+    if [ "$(uname -s)" = "Darwin" ] && command -v brew &>/dev/null; then
+        if command -v terminal-notifier &>/dev/null; then
+            ok "terminal-notifier is already installed."
+        else
+            info "Installing terminal-notifier …"
+            brew install terminal-notifier && ok "terminal-notifier installed."
+        fi
+    fi
+
+    # GitHub CLI + gh-dash extension.
+    if ! command -v gh &>/dev/null; then
+        info "gh (GitHub CLI) not found. Attempting to install …"
+        if command -v brew &>/dev/null; then
+            brew install gh
+        elif command -v dnf &>/dev/null; then
+            sudo dnf install -y gh
+        elif command -v pacman &>/dev/null; then
+            sudo pacman -S --noconfirm github-cli
+        else
+            warn "Install gh manually: https://github.com/cli/cli#installation (apt needs the GitHub repo first)."
+        fi
+    fi
+
+    if ! command -v gh &>/dev/null; then
+        warn "gh is not available; skipping the gh-dash extension."
+        return 0
+    fi
+
+    if gh extension list 2>/dev/null | grep -q 'dlvhdr/gh-dash'; then
+        ok "gh-dash extension is already installed."
+    elif gh auth status &>/dev/null; then
+        info "Installing gh-dash extension …"
+        gh extension install dlvhdr/gh-dash && ok "gh-dash installed (run: gh dash)."
+    else
+        warn "gh is not logged in; run 'gh auth login' then 'gh extension install dlvhdr/gh-dash'."
+    fi
+}
+
+# ─── 8. Link repo tools into ~/.local/bin ────────────────────────────────────
+# tools/ holds scripts meant to be run by hand as well as by launchd/cron.
+# A shell alias would only exist in interactive zsh, so these get a real
+# symlink on PATH instead: that works in scripts, in launchd, and in
+# `command -v` checks. ~/.local/bin is the XDG-ish default and is already on
+# PATH in .zshrc's environment on most machines; we add it if it is missing.
+
+link_repo_bins() {
+    local bin_dir="$HOME/.local/bin"
+    local tools=("gh-pr-notify.sh")
+    local tool src dst name
+
+    mkdir -p "$bin_dir"
+
+    for tool in "${tools[@]}"; do
+        src="$DOTFILES_DIR/tools/$tool"
+        name="${tool%.sh}"
+        dst="$bin_dir/$name"
+
+        [ -f "$src" ] || continue
+        chmod +x "$src" 2>/dev/null || true
+
+        if [ -L "$dst" ] && [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ]; then
+            ok "$name already linked into ~/.local/bin."
+            continue
+        fi
+        if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+            warn "$dst exists and is not a symlink; leaving it alone."
+            continue
+        fi
+        ln -sfn "$src" "$dst"
+        ok "Linked $dst → $src"
+    done
+
+    case ":$PATH:" in
+        *":$bin_dir:"*) ;;
+        *) warn "~/.local/bin is not on PATH; add it in ~/.zsh_extra: export PATH=\"$HOME/.local/bin:$PATH\"" ;;
+    esac
+}
+
+# ─── 9. GitHub PR notifications (macOS launchd agent) ────────────────────────
+# Renders tools/launchd/com.hyunhwan.dotfiles.gh-pr-notify.plist into
+# ~/Library/LaunchAgents and (re)loads it, so tools/gh-pr-notify.sh runs every
+# 5 minutes. Idempotent: nothing is reloaded when the rendered plist is
+# unchanged and the agent is already running. Skipped silently off macOS.
+
+install_gh_pr_notify_agent() {
+    [ "$(uname -s)" = "Darwin" ] || return 0
+
+    local label="com.hyunhwan.dotfiles.gh-pr-notify"
+    local template="$DOTFILES_DIR/tools/launchd/$label.plist"
+    local dst="$HOME/Library/LaunchAgents/$label.plist"
+
+    if [ ! -f "$template" ]; then
+        ok "No launchd template for gh-pr-notify in repo; skipping."
+        return 0
+    fi
+
+    mkdir -p "$HOME/Library/LaunchAgents" "$HOME/.local/state/gh-pr-notify"
+    local rendered
+    rendered="$(mktemp)"
+    sed "s|__HOME__|$HOME|g" "$template" > "$rendered"
+
+    if [ -f "$dst" ] && cmp -s "$rendered" "$dst" \
+        && launchctl print "gui/$(id -u)/$label" &>/dev/null; then
+        ok "gh-pr-notify launchd agent is already installed and loaded."
+        rm -f "$rendered"
+        return 0
+    fi
+
+    mv "$rendered" "$dst"
+    chmod 644 "$dst"
+    # bootout fails harmlessly when the agent is not loaded yet.
+    launchctl bootout "gui/$(id -u)/$label" &>/dev/null || true
+    if launchctl bootstrap "gui/$(id -u)" "$dst"; then
+        ok "gh-pr-notify launchd agent loaded (every 5 min; logs in ~/.local/state/gh-pr-notify/launchd.log)."
+    else
+        warn "Could not load $dst; run: launchctl bootstrap gui/$(id -u) $dst"
+    fi
+}
+
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
 post_update() {
@@ -368,6 +538,8 @@ post_update() {
     restow_quietly || return 1
     link_pi_agent_files
     ensure_ssh_include
+    link_repo_bins
+    install_gh_pr_notify_agent
 }
 
 main() {
@@ -389,6 +561,9 @@ main() {
     link_pi_agent_files
     create_zsh_extra
     ensure_ssh_include
+    install_pr_review_tools
+    link_repo_bins
+    install_gh_pr_notify_agent
 
     echo ""
     ok "All done! Open a new terminal or run 'exec zsh' to apply changes."
